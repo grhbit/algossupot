@@ -30,6 +30,8 @@ Submission.prototype.isValid = function () {
 
 Submission.prototype.loadById = function (id, cb) {
   var self = this;
+
+  alog.info('Submission#' + id + ' => loadById');
   sqlClient.query(Query.findById, {id: id})
     .on('result', function (res) {
       res.on('row', function (row) {
@@ -40,6 +42,7 @@ Submission.prototype.loadById = function (id, cb) {
         self.state = row.state;
         self.codeLength = row.codeLength;
         self.timestamp = row.timestamp;
+        alog.info(row);
       }).on('error', function (err) {
         alog.error(err);
         cb(err);
@@ -52,9 +55,6 @@ Submission.prototype.loadById = function (id, cb) {
           cb();
         }
       });
-    })
-    .on('end', function () {
-      return undefined;
     });
 };
 
@@ -65,22 +65,27 @@ Submission.prototype.submit = function (cb) {
   } else {
     if (!self.isValid()) {
       cb('Submission is invalid');
-    }
+    } else {
+      alog.info('Submission.submit');
+      sqlClient.query(Query.pushSubmit, self)
+        .on('result', function (res) {
+          res.on('row', function (row) {
+            alog.info(row);
+          }).on('error', function (err) {
+            alog.error(err);
+            cb(err);
+          }).on('end', function (info) {
+            alog.info(info);
 
-    alog.info('Submission.submit');
-    sqlClient.query(Query.pushSubmit, self)
-      .on('result', function (res) {
-        res.on('row', function (row) {
-          alog.info(row);
-        }).on('error', function (err) {
-          alog.error(err);
-          cb(err);
-        }).on('end', function (info) {
-          alog.info(info);
-          self.id = info.insertId;
-          cb();
+            if (info.affectedRows === 0) {
+              cb('Submission submit failed');
+            } else {
+              self.id = info.insertId;
+              cb();
+            }
+          });
         });
-      });
+    }
   }
 };
 
