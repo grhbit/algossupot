@@ -67,7 +67,6 @@ User.prototype.loadByName = function (name, cb) {
 
 User.prototype.equal = function (other) {
   if (this.name !== other.name ||
-      this.email !== other.email ||
       this.password !== other.password) {
     console.log(JSON.stringify(this));
     console.log(JSON.stringify(other));
@@ -77,22 +76,23 @@ User.prototype.equal = function (other) {
   return true;
 };
 
-User.prototype.validating = function () {
+User.prototype.validating = function (options) {
   var res = {
     result: true,
     detail: {
       name: true,
-      email: true,
       password: true
     }
   };
+
+  options = options || {};
 
   if (this.name == null || !Regex.name.test(this.name)) {
     res.result = false;
     res.detail.name = false;
   }
 
-  if (this.email == null || !Regex.email.test(this.email)) {
+  if ((options.email !== false) && (this.email == null || !Regex.email.test(this.email))) {
     res.result = false;
     res.detail.email = false;
   }
@@ -139,7 +139,7 @@ User.prototype.signUp = function (cb) {
 // 로그인
 User.prototype.signIn = function (cb) {
   var self = this,
-    validation = self.validating();
+    validation = self.validating({ email: false });
 
   if (validation.result) {
     alog.info('User.signIn');
@@ -153,10 +153,13 @@ User.prototype.signIn = function (cb) {
             alog.info('User.signIn#' + self.name + ' - signin success');
 
             //@TODO: 세션에 추가?
-            cb(null, true);
+            self.id = row.id;
+            self.name = row.name;
+            self.email = row.email;
+            cb();
           } else {
             alog.info('User.signIn#' + self.name + ' - signin failed');
-            cb(null, false);
+            cb('password incorrect');
           }
         }).on('error', function (err) {
           alog.error(err);
@@ -167,12 +170,11 @@ User.prototype.signIn = function (cb) {
           if (info.numRows !== 0) {
             self.id = info.insertId;
           }
-
         });
       });
   } else {
     alog.info('User.signIn - validation failed');
-    cb(null, false);
+    cb('validation failed');
   }
 };
 
