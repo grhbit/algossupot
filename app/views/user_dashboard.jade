@@ -1,0 +1,23 @@
+extends default_template
+
+block content
+  h3= '안녕하세요 ' + user.name + '님'
+  hr
+  .table-responsive
+    table.table.table-striped
+      thead
+        tr
+          th(style='width: 15%; font-size:16px') 문제 번호
+          th(style='font-size:16px') 문제 이름
+          th(style='width: 15%; font-size:16px') 상태
+          th(style='width: 15%; font-size:16px') 코드 보기
+      tbody
+        each item in rows
+          tr
+            td
+              a(href='#')= item.num
+            td
+              a(href='#')= item.title
+            td= item.status
+            td
+              a(href='#')= item.code

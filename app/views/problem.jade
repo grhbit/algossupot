@@ -1,0 +1,14 @@
+extends default_template
+
+block content
+  .panel.panel-info(style='margin-top: 10px;')
+    .panel-heading
+      h2= problem_title
+    .panel-body
+      != problem_content
+      hr
+
+      h4 소스 제출
+      form(style='width: 300px;', action='/problems/' + problem_id + '/submit' method='POST')
+        textarea(name='source-code-form', rows='5', placeholder='Write your code in here', style='width: 300px;')
+        button.btn.btn-primary.btn-block(type='submit', style='margin-top: 5px;') Submit
