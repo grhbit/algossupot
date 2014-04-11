@@ -13,6 +13,7 @@
     "underscore": "*",
     "mariasql": "*",
     "winston": "*",
-    "marked": "*"
+    "marked": "*",
+    "connect-redis": "1.4.7"
   }
 }
