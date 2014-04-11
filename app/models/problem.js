@@ -24,6 +24,8 @@ Problem.prototype.loadById = function (id, cb) {
     .on('result', function (res) {
       res.on('row', function (row) {
         self.id = row.id;
+        self.title = row.title;
+        self.content = row.content;
         alog.info(row);
       }).on('error', function (err) {
         alog.error(err);
