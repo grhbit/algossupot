@@ -1,29 +1,25 @@
+/*jslint node: true, eqeq: true */
+/*global sqlClient, alog*/
 'use strict';
+
 var express = require('express');
+var RedisStore = require('connect-redis')(express);
 var routes = require('./config/routes');
-var user = require('./config/routes/user');
-var sessions = require('./config/routes/sessions');
 var http = require('http');
 var path = require('path');
 var MariaSQL = require('mariasql');
 var winston = require('winston');
 
-var logger = new (winston.Logger)({
+winston.addColors(winston.config.syslog.colors);
+
+global.alog = new (winston.Logger)({
   transports: [
     new (winston.transports.Console)({
-      level: 'error',
-      colorize: true,
-      timestamp: true
+      colorize: true
     }),
-    new (winston.transports.Webhook)({
-      host: 'localhost',
-      port: 8081,
-      path: '/collectdata'
-    })
+    new (winston.transports.File)({ filename: 'server.log' })
   ]
 });
-
-global.logger = logger;
 
 var app = express();
 var client = new MariaSQL();
@@ -35,14 +31,14 @@ client.connect({
 });
 
 client.on('connect', function () {
-  console.log('db connected');
+  alog.info('db connected');
   global.sqlClient = client;
 }).on('error', function () {
-  console.log('db connection error');
-  global.sqlClient = null;
+  alog.error('db connection error');
+  delete global.sqlClient;
 }).on('close', function () {
-  console.log('db connection closed');
-  global.sqlClient = null;
+  alog.info('db connection closed');
+  delete global.sqlClient;
 });
 
 // all environments
@@ -54,6 +50,12 @@ app.use(express.logger('dev'));
 app.use(express.json());
 app.use(express.urlencoded());
 app.use(express.methodOverride());
+app.use(express.cookieParser('S3CRE7'));
+app.use(express.session({ store: new RedisStore({
+  host: '127.0.0.1',
+  port: 6379,
+  prefix: 'sess'
+}), secret: 'SEKR37' }));
 app.use(app.router);
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -62,49 +64,8 @@ if ('development' === app.get('env')) {
   app.use(express.errorHandler());
 }
 
-app.param('uid', function (req, res, next, id) {
-  user.get(id, function (err, reply) {
-    if (err) {
-      next(err);
-    } else if (reply) {
-      req.user = reply;
-      next();
-    } else {
-      next('');
-    }
-  });
-});
-
-app.all('/users/*', function (req, res) {
-
-});
-
-app.get('/', routes.index);
-app.get('/users', user.list);
-
-app.get('/test/:name/:email/:password', function (req, res) {
-  console.info(req.params);
-  user.register({
-    name: req.params.name,
-    email: req.params.email,
-    password: req.params.password
-  }, function (err) {
-    if (err) {
-      res.end(err);
-    } else {
-      res.json('');
-    }
-  });
-});
-
-//app.param('uid', Number);
-app.get('/users/:uid', function (req, res) {
-  res.json({id: req.params.uid});
-  logger.log('user');
-});
-
-app.get('/sessions', sessions.index);
+routes.use(app);
 
 http.createServer(app).listen(app.get('port'), function () {
-  logger.log('info', 'Express server listening on port ' + app.get('port'));
+  alog.info('Express server listening on port ' + app.get('port'));
 });
