@@ -12,6 +12,7 @@
     "hashish": "*",
     "underscore": "*",
     "mariasql": "*",
-    "winston": "*"
+    "winston": "*",
+    "marked": "*"
   }
 }
