@@ -8,28 +8,45 @@
 
 ### 유저 (User)
 ```sql
-CREATE TABLE `user` (
-  `id` int(10) unsigned NOT NULL AUTO_INCREMENT,
-  `name` char(32) NOT NULL,
-  `email` char(64) NOT NULL,
-  `password` char(32) NOT NULL,
+CREATE TABLE `algossupot`.`user` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(32) NOT NULL,
+  `email` VARCHAR(64) NOT NULL,
+  `password` CHAR(32) NOT NULL,
   PRIMARY KEY (`id`,`name`),
   UNIQUE KEY `name` (`name`)
 );
 ```
+
+### 문제 (Problem)
+```sql
+CREATE TABLE `algossupot`.`problem` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `title` VARCHAR(64) NOT NULL,
+  `content` TEXT NULL,
+  PRIMARY KEY (`id`, `title`),
+  UNIQUE INDEX `title_UNIQUE` (`title` ASC));
+```
+
 ### 제출 상태 (Submission)
 ```sql
 CREATE TABLE `algossupot`.`submission` (
   `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
-  `problemId` INT NOT NULL,
+  `problemId` INT UNSIGNED NOT NULL,
   `userId` INT UNSIGNED NOT NULL,
   `language` VARCHAR(64) CHARACTER SET 'utf8mb4' NOT NULL,
   `state` SMALLINT UNSIGNED NOT NULL,
   `codeLength` INT UNSIGNED NOT NULL,
   `timestamp` INT UNSIGNED NOT NULL,
   PRIMARY KEY (`id`),
-  INDEX `id_idx` (`userId` ASC),
-  CONSTRAINT `id`
+  INDEX `problemid_id_idx` (`problemId` ASC),
+  INDEX `userid_id_idx` (`userId` ASC),
+  CONSTRAINT `fk_problemId`
+    FOREIGN KEY (`problemId`)
+    REFERENCES `algossupot`.`problem` (`id`)
+    ON DELETE NO ACTION
+    ON UPDATE NO ACTION,
+  CONSTRAINT `fk_userId`
     FOREIGN KEY (`userId`)
     REFERENCES `algossupot`.`user` (`id`)
     ON DELETE NO ACTION
