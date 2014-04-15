@@ -9,8 +9,10 @@ var http = require('http');
 var path = require('path');
 var MariaSQL = require('mariasql');
 var winston = require('winston');
+var config = require('./config');
 var sqlQuery = require('./config/sql-query');
 
+global.config = config;
 global.sqlQuery = sqlQuery;
 
 winston.addColors(winston.config.syslog.colors);
