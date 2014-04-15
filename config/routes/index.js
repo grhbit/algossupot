@@ -139,16 +139,7 @@ var routes = {
           delete req.session.user;
         }
 
-        var user = new User();
-
-        console.log(JSON.stringify(req.body));
-
-        user.name = req.body.name;
-        user.password = req.body.password;
-
-        user.signIn(function (err) {
-          delete user.password;
-
+        User.signIn(req.body.name, req.body.password, function (err, user) {
           if (err) {
             delete req.session.user;
             res.redirect('/');

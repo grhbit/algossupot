@@ -134,12 +134,12 @@ User.validating = function (user, password, options) {
 
   options = options || {};
 
-  if (this.name == null || !Regex.name.test(this.name)) {
+  if (user.name == null || !Regex.name.test(user.name)) {
     res.result = false;
     res.detail.name = false;
   }
 
-  if ((options.email !== false) && (this.email == null || !Regex.email.test(this.email))) {
+  if ((options.email !== false) && (user.email == null || !Regex.email.test(user.email))) {
     res.result = false;
     res.detail.email = false;
   }
@@ -185,22 +185,23 @@ User.signUp = function (user, password, cb) {
 };
 
 // 로그인을 처리하는 함수입니다.
-User.signIn = function (user, password, cb) {
-  var validation = User.validating(user, password, { email: false });
+User.signIn = function (name, password, cb) {
+  var validation = User.validating({name: name}, password, { email: false });
 
+  console.log(JSON.stringify(validation));
   if (validation.result) {
     alog.info('User.signIn');
-    sqlClient.query(sqlQuery.User.loadByName, user)
+    sqlClient.query(sqlQuery.User.loadByName, {name: name})
       .on('result', function (res) {
         res.on('row', function (row) {
           alog.info(row);
 
           //@TODO: 패스워드 암호화 후 비교
           if (password === row.password) {
-            alog.info('User.signIn#{OK}' + user.name);
+            alog.info('User.signIn#{OK}' + name);
             cb(null, new User(row));
           } else {
-            alog.info('User.signIn#{NO}' + user.name);
+            alog.info('User.signIn#{NO}' + name);
             cb('password incorrect');
           }
         }).on('error', function (err) {
@@ -211,7 +212,7 @@ User.signIn = function (user, password, cb) {
         });
       });
   } else {
-    alog.info('User.signIn#{NO}' + user.name);
+    alog.info('User.signIn#{NO}');
     cb('validation failed');
   }
 };
