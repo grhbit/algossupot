@@ -9,6 +9,9 @@ var http = require('http');
 var path = require('path');
 var MariaSQL = require('mariasql');
 var winston = require('winston');
+var sqlQuery = require('./config/sql-query');
+
+global.sqlQuery = sqlQuery;
 
 winston.addColors(winston.config.syslog.colors);
 
@@ -26,7 +29,7 @@ var client = new MariaSQL();
 client.connect({
   host: '127.0.0.1',
   port: 17240,
-  user: 'ssu_user',
+  user: 'algossupotadmin',
   password: 'ncloudme'
 });
 

@@ -1,0 +1,8 @@
+extends ../layout
+
+block content
+  form(role='form' action='/problems' method='post')
+    div.input-group
+      input.form-control(type='text' placeholder='Title' name='title')
+      input.form-control(type='text' placeholder='Content' name='content')
+      button.btn.btn-success(type='submit') Submit
