@@ -28,7 +28,7 @@ var app = express();
 var client = new MariaSQL();
 client.connect({
   host: '127.0.0.1',
-  port: 17240,
+  port: 3306,
   user: 'algossupotadmin',
   password: 'ncloudme'
 });
