@@ -183,6 +183,7 @@ exports.use = function (app) {
   app.post('/session/new', routes.session.new.post);
   app.post('/session/destroy', routes.session.destroy.post);
 
+  app.post('/auth/signin/recv', AuthController.signIn);
   app.get('/auth/signup', AuthController.signUp);
   app.post('/auth/signup/recv', AuthController.signUp_recvData);
 };

@@ -7,6 +7,24 @@ function Controller() {
   return undefined;
 }
 
+
+Controller.signIn = function (req, res, next) {
+  var userid = req.body.userid,
+    password = req.body.password;
+
+  User.signIn(userid, password, function (err, user) {
+    if (err) {
+      alog.error(err);
+      res.redirect('/');
+      res.end();
+    } else {
+      req.session.user = user;
+      res.redirect('/');
+      res.end();
+    }
+  });
+};
+
 Controller.signUp = function (req, res, next) {
   res.render('auth/signup');
 };
