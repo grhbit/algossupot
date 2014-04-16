@@ -153,7 +153,7 @@ exports.use = function (app) {
     res.render('admin/problem');
   });
 
-  app.post('/auth/signin/recv', AuthController.signIn);
+  app.post('/auth/signin', AuthController.signIn);
   app.post('/auth/signout', AuthController.signOut);
   app.get('/auth/signup', AuthController.signUp);
   app.post('/auth/signup/recv', AuthController.signUp_recvData);

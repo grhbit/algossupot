@@ -28,7 +28,7 @@ html
             form.navbar-form.navbar-right(role='form', action='/auth/signout', method='post')
               button.btn.btn-danger(type='submit') Sign out
           else
-            form.navbar-form.navbar-right(role='form', action='/auth/signin/recv', method='post')
+            form.navbar-form.navbar-right(role='form', action='/auth/signin', method='post')
               .form-group
                 input.form-control(type='text', name='userid', placeholder='Username')
               .form-group
