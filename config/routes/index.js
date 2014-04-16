@@ -5,6 +5,7 @@ var User = require('../../app/models/user');
 var Problem = require('../../app/models/problem');
 var Submission = require('../../app/models/submission');
 var UserController = require('../../app/controllers/user');
+var AuthController = require('../../app/controllers/auth');
 
 var marked = require('marked');
 marked.setOptions({
@@ -181,4 +182,7 @@ exports.use = function (app) {
 
   app.post('/session/new', routes.session.new.post);
   app.post('/session/destroy', routes.session.destroy.post);
+
+  app.get('/auth/signup', AuthController.signUp);
+  app.post('/auth/signup/recv', AuthController.signUp_recvData);
 };
