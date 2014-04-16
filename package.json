@@ -14,6 +14,8 @@
     "mariasql": "*",
     "winston": "*",
     "marked": "*",
-    "connect-redis": "1.4.7"
+    "connect-redis": "1.4.7",
+    "mysql-activerecord": "*",
+    "crypto": "*"
   }
 }
