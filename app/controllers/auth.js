@@ -25,9 +25,17 @@ Controller.signIn = function (req, res, next) {
   });
 };
 
+
+Controller.signOut = function (req, res, next) {
+  req.session.destroy();
+  res.redirect('/');
+};
+
+
 Controller.signUp = function (req, res, next) {
   res.render('auth/signup');
 };
+
 
 Controller.signUp_recvData = function (req, res, next) {
   var userid = req.body.userid,

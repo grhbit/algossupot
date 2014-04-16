@@ -25,7 +25,7 @@ html
               a(href='#contact') Contact
 
           if is_signed_in
-            form.navbar-form.navbar-right(role='form', action='/session/destroy', method='post')
+            form.navbar-form.navbar-right(role='form', action='/auth/signout', method='post')
               button.btn.btn-danger(type='submit') Sign out
           else
             form.navbar-form.navbar-right(role='form', action='/auth/signin/recv', method='post')
