@@ -131,33 +131,6 @@ var routes = {
         });
       }
     }
-  },
-  session: {
-    new: {
-      post: function (req, res) {
-        if (req.session.user) {
-          req.session.user.destroy();
-          delete req.session.user;
-        }
-
-        User.signIn(req.body.name, req.body.password, function (err, user) {
-          if (err) {
-            delete req.session.user;
-            res.redirect('/');
-          } else {
-            req.session.user = user;
-            res.redirect('/');
-          }
-        });
-
-      }
-    },
-    destroy: {
-      post: function (req, res) {
-        req.session.destroy();
-        res.redirect('/');
-      }
-    }
   }
 };
 
@@ -180,9 +153,8 @@ exports.use = function (app) {
     res.render('admin/problem');
   });
 
-  app.post('/session/new', routes.session.new.post);
-  app.post('/session/destroy', routes.session.destroy.post);
-
+  app.post('/auth/signin', AuthController.signIn);
+  app.post('/auth/signout', AuthController.signOut);
   app.get('/auth/signup', AuthController.signUp);
   app.post('/auth/signup/recv', AuthController.signUp_recvData);
 };

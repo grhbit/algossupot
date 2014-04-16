@@ -63,37 +63,37 @@ User.signUp = function (id, pw, callback) {
 };
 
 
-// // 로그인을 처리하는 함수입니다.
-// User.signIn = function (user, password, cb) {
-//   var validation = User.validating(user, password, { email: false });
+// 로그인을 처리하는 함수입니다.
+User.signIn = function (id, pw, callback) {
 
-//   if (validation.result) {
-//     alog.info('User.signIn');
-//     sqlClient.query(sqlQuery.User.loadByName, user)
-//       .on('result', function (res) {
-//         res.on('row', function (row) {
-//           alog.info(row);
+  var hmacer = crypto.createHmac(encryption_algorithm, encryption_key).update(pw),
+    hashed_pw = hmacer.digest('hex');
 
-//           //@TODO: 패스워드 암호화 후 비교
-//           if (password === row.password) {
-//             alog.info('User.signIn#{OK}' + user.name);
-//             cb(null, new User(row));
-//           } else {
-//             alog.info('User.signIn#{NO}' + user.name);
-//             cb('password incorrect');
-//           }
-//         }).on('error', function (err) {
-//           alog.error(err);
-//           cb(err);
-//         }).on('end', function (info) {
-//           alog.info(info);
-//         });
-//       });
-//   } else {
-//     alog.info('User.signIn#{NO}' + user.name);
-//     cb('validation failed');
-//   }
-// };
+  db.where({
+    userid: id,
+    password: hashed_pw
+  })
+    .count(table_name,
+      function (err, result, fields) {
+        if (err) {
+          alog.error(err);
+          callback(err);
+        } else {
+          if (result == 0) {
+            // not found same data
+            alog.error('User.signIn#{NO}' + id);
+            alog.error(JSON.stringify({
+              userid: id,
+              password: hashed_pw
+            }));
+          } else if (result == 1) {
+            // found!
+            alog.info('User.signIn#{OK}' + id);
+            callback(null, new User({ id: id, name: 'tester', email: 'tester@ssu.ac.kr' }));
+          }
+        }
+      });
+};
 
 
 //#endregion - static functions
