@@ -13,9 +13,18 @@ var winston = require('winston');
 var config = require('./config');
 var sqlQuery = require('./config/sql-query');
 
-global.async = async;
+var DBLib = require('mysql-activerecord');
+var db = new DBLib.Adapter({
+  server: '127.0.0.1',
+  username: 'algossupotadmin',
+  password: 'ncloudme',
+  database: 'algossupot'
+});
+
 global.config = config;
 global.sqlQuery = sqlQuery;
+global.db = db;
+global.async = async;
 
 winston.addColors(winston.config.syslog.colors);
 

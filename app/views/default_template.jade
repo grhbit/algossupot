@@ -25,15 +25,17 @@ html
               a(href='#contact') Contact
 
           if is_signed_in
-            form.navbar-form.navbar-right(role='form', action='/session/destroy', method='post')
+            form.navbar-form.navbar-right(role='form', action='/auth/signout', method='post')
               button.btn.btn-danger(type='submit') Sign out
           else
-            form.navbar-form.navbar-right(role='form', action='/session/new', method='post')
+            form.navbar-form.navbar-right(role='form', action='/auth/signin', method='post')
               .form-group
-                input.form-control(type='text', name='name', placeholder='Username')
+                input.form-control(type='text', name='userid', placeholder='Username')
               .form-group
                 input.form-control(type='password', name='password', placeholder='Password')
               button.btn.btn-success(type='submit') Sign in
+              a(href='/auth/signup')
+                button.btn.btn-primary(type='button') Sign up
 
     .container(style='padding-top: 50px; padding-bottom: 20px;')
       block content
