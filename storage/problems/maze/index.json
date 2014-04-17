@@ -1,0 +1,19 @@
+{
+  "__unique": "sample",
+  "metadata": {
+    "slug": "maze",
+    "userId": 1,
+    "name": "미로 찾기"
+  },
+  "contents": {
+    "description": "marked-string",
+    "input": "marked-string",
+    "output": "marked-string",
+    "sampleInput": "marked-string",
+    "sampleOutput": "marked-string",
+    "note": "marked-string",
+    "timeLimit": 0,
+    "memoryLimit": 0
+  },
+  "versions": {}
+}
