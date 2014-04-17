@@ -7,11 +7,13 @@ var RedisStore = require('connect-redis')(express);
 var routes = require('./config/routes');
 var http = require('http');
 var path = require('path');
+var async = require('async');
 var MariaSQL = require('mariasql');
 var winston = require('winston');
 var config = require('./config');
 var sqlQuery = require('./config/sql-query');
 
+global.async = async;
 global.config = config;
 global.sqlQuery = sqlQuery;
 
