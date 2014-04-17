@@ -11,7 +11,6 @@
     "async": "*",
     "hashish": "*",
     "underscore": "*",
-    "mariasql": "*",
     "winston": "*",
     "marked": "*",
     "connect-redis": "1.4.7",

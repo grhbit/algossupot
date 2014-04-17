@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global sqlClient, alog*/
+/*global alog, db*/
 'use strict';
 
 var Query = {
@@ -28,65 +28,55 @@ Submission.prototype.isValid = function () {
     this.timestamp != null;
 };
 
-Submission.prototype.loadById = function (id, cb) {
-  var self = this;
-
-  alog.info('Submission#' + id + ' => loadById');
-  sqlClient.query(Query.findById, {id: id})
-    .on('result', function (res) {
-      res.on('row', function (row) {
-        self.id = row.id;
-        self.problemId = row.problemId;
-        self.userId = row.userId;
-        self.language = row.language;
-        self.state = row.state;
-        self.codeLength = row.codeLength;
-        self.timestamp = row.timestamp;
-        alog.info(row);
-      }).on('error', function (err) {
-        alog.error(err);
+Submission.loadById = function (id, cb) {
+  alog.info('Submission.loadById#' + id);
+  db.select()
+    .where({id: id})
+    .limit(1)
+    .get('submission', function (err, results, fields) {
+      if (err) {
         cb(err);
-      }).on('end', function (info) {
-        alog.info(info);
-
-        if (info.numRows === 0) {
-          cb('not found submission#' + id);
+      } else {
+        if (results.length !== 0) {
+          cb(null, new Submission(results[0]));
         } else {
-          cb();
+          cb('not found submission#' + id);
         }
-      });
+      }
     });
 };
 
-Submission.prototype.submit = function (cb) {
-  var self = this;
-  if (self.id !== null) {
-    alog.error('Submission id must be null to submit');
-  } else {
-    if (!self.isValid()) {
-      cb('Submission is invalid');
+Submission.submit = function (submission, cb) {
+  db.insert('submission', {
+    problemId: submission.problemId,
+    userId: submission.userId,
+    language: submission.language,
+    state: submission.state,
+    codeLength: submission.codeLength,
+    timestamp: submission.timestamp
+  }, function (err, info) {
+    if (err) {
+      cb(err);
     } else {
-      alog.info('Submission.submit');
-      sqlClient.query(Query.pushSubmit, self)
-        .on('result', function (res) {
-          res.on('row', function (row) {
-            alog.info(row);
-          }).on('error', function (err) {
-            alog.error(err);
-            cb(err);
-          }).on('end', function (info) {
-            alog.info(info);
-
-            if (info.affectedRows === 0) {
-              cb('Submission submit failed');
-            } else {
-              self.id = info.insertId;
-              cb();
-            }
-          });
-        });
+      cb(null, info);
     }
-  }
+  });
+};
+
+Submission.prototype.submit = function (cb) {
+  Submission.submit(this, cb);
+};
+
+Submission.prototype.changeState = function (state, cb) {
+  db.update('submission', {
+    state: state
+  }, function (err) {
+    if (err) {
+      cb(err);
+    } else {
+      cb();
+    }
+  });
 };
 
 module.exports = Submission;

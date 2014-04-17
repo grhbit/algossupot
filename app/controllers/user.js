@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global sqlClient, alog*/
+/*global alog*/
 'use strict';
 var User = require('../models/user');
 

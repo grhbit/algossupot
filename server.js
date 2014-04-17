@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global sqlClient, alog*/
+/*global alog*/
 'use strict';
 
 var express = require('express');
@@ -8,10 +8,8 @@ var routes = require('./config/routes');
 var http = require('http');
 var path = require('path');
 var async = require('async');
-var MariaSQL = require('mariasql');
 var winston = require('winston');
 var config = require('./config');
-var sqlQuery = require('./config/sql-query');
 
 var DBLib = require('mysql-activerecord');
 var db = new DBLib.Adapter({
@@ -22,7 +20,6 @@ var db = new DBLib.Adapter({
 });
 
 global.config = config;
-global.sqlQuery = sqlQuery;
 global.db = db;
 global.async = async;
 
@@ -38,24 +35,6 @@ global.alog = new (winston.Logger)({
 });
 
 var app = express();
-var client = new MariaSQL();
-client.connect({
-  host: '127.0.0.1',
-  port: 3306,
-  user: 'algossupotadmin',
-  password: 'ncloudme'
-});
-
-client.on('connect', function () {
-  alog.info('db connected');
-  global.sqlClient = client;
-}).on('error', function () {
-  alog.error('db connection error');
-  delete global.sqlClient;
-}).on('close', function () {
-  alog.info('db connection closed');
-  delete global.sqlClient;
-});
 
 // all environments
 app.set('port', process.env.PORT || 17239);

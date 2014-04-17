@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global sqlClient, sqlQuery, alog, db*/
+/*global alog, db*/
 'use strict';
 
 var table_name = 'auth';

@@ -11,4 +11,11 @@ Config.dir = {
   view: path.join(rootDirectory, './app/views')
 };
 
+Config.db = {
+  tableName: {
+    problem: 'problem',
+    submission: 'submission'
+  }
+};
+
 module.exports = Config;

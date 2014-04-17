@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global async, sqlClient, alog, config*/
+/*global async, alog, config, db*/
 'use strict';
 var path = require('path'),
   fs = require('fs');
@@ -67,26 +67,46 @@ Problem.validating = function (metadata, contents) {
   return res;
 };
 
-Problem.loadById = function (id, cb) {
+Problem.loadById = function (id, callback) {
   alog.info('Problem.loadById#' + id);
-  sqlClient.query(Query.findById, {id: id})
-    .on('result', function (res) {
-      res.on('row', function (row) {
-        alog.info(row);
 
-        var problem = new Problem(row);
-        cb(null, problem);
-      }).on('error', function (err) {
-        alog.error(err);
-        cb(err);
-      }).on('end', function (info) {
-        alog.info(info);
+  async.waterfall([
+    function (cb) {
+      db.select()
+        .where({id: id})
+        .limit(1)
+        .get('problem', function (err, results, fields) {
+          if (err) {
+            cb(err);
+          } else {
+            cb(null, results[0]);
+          }
+        });
+    },
+    function (metadata, cb) {
+      var indexPath = path.join(config.dir.storage, './problems', metadata.slug, './index.json');
 
-        if (info.numRows === 0) {
-          cb('not found problem#' + id);
+      fs.stat(indexPath, function (err, stats) {
+        if (err) {
+          callback(err);
+        } else {
+          fs.readFile(indexPath, function (err, data) {
+            var problemInfo = JSON.parse(data);
+            cb(null, metadata, problemInfo.contents);
+          });
         }
       });
-    });
+    },
+  ], function (err, metadata, contents) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null, new Problem({
+        metadata: metadata,
+        contents: contents
+      }));
+    }
+  });
 };
 
 Problem.loadBySlug = function (slug, callback) {
@@ -135,7 +155,9 @@ Problem.exists = function (slug, callback) {
 };
 
 Problem.new = function (metadata, contents, callback) {
-  var slugDir = path.join(config.dir.storage, './problems', metadata.slug);
+  var slugDir = path.join(config.dir.storage, './problems', metadata.slug),
+    indexPath = path.join(slugDir, './index.json');
+
   async.waterfall([
     function (cb) {
       cb(null, metadata.slug);
@@ -150,23 +172,39 @@ Problem.new = function (metadata, contents, callback) {
     },
     fs.mkdir,
     function (cb) {
-      var indexPath = path.join(slugDir, './index.json');
-      cb(indexPath, JSON.stringify({
+      cb(null, indexPath, JSON.stringify({
         metadata: metadata,
         contents: contents
       }));
     },
     fs.writeFile,
     function (cb) {
-      sqlClient.query(Query.insert, {metadata: metadata, contents: contents})
-        .on('result', function (res) {
-          res.on('error', function (err) {
-            alog.error(err);
+      db.where({slug: metadata.slug})
+        .limit(1)
+        .count('problem', function (err, results, fields) {
+          if (err) {
             cb(err);
-          }).on('end', function (info) {
-            cb();
-          });
+          } else {
+            if (results === 0) {
+              cb();
+            } else {
+              cb('already exists problem\'s slug');
+            }
+          }
         });
+    },
+    function (cb) {
+      db.insert('problem', {
+        slug: metadata.slug,
+        userId: metadata.userId,
+        name: metadata.name
+      }, function (err, info) {
+        if (err) {
+          cb(err);
+        } else {
+          cb();
+        }
+      });
     }
   ], function (err) {
     if (err) {

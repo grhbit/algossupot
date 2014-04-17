@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global sqlClient, sqlQuery, alog*/
+/*global alog, async, db*/
 'use strict';
 
 var Query = {
@@ -31,95 +31,111 @@ function User(params) {
 
 User.loadById = function (id, cb) {
   alog.info('User.loadById#' + id);
-  sqlClient.query(Query.findById, {id: id})
-    .on('result', function (res) {
-      res.on('row', function (row) {
-        alog.info(row);
 
-        var user = new User(row);
-        cb(null, user);
-      }).on('error', function (err) {
-        alog.error(err);
+  async.select()
+    .where({id: id})
+    .limit(1)
+    .get('user', function (err, results, fields) {
+      if (err) {
         cb(err);
-      }).on('end', function (info) {
-        alog.info(info);
-
-        if (info.numRows === 0) {
-          cb(null, {});
+      } else {
+        if (results.length === 0) {
+          cb(null, null);
+        } else {
+          cb(null, new User(results[0]));
         }
-      });
+      }
     });
 };
 
 User.loadByName = function (name, cb) {
   alog.info('User.loadById#' + name);
-  sqlClient.query(Query.findByName, {name: name})
-    .on('result', function (res) {
-      res.on('row', function (row) {
-        alog.info(row);
-
-        var user = new User();
-        user.id = row.id;
-        user.name = row.name;
-        user.email = row.email;
-        user.password = row.password;
-        cb(null, user);
-      }).on('error', function (err) {
-        alog.error(err);
+  db.select()
+    .where({name: name})
+    .limit(1)
+    .get('user', function (err, results, fields) {
+      if (err) {
         cb(err);
-      }).on('end', function (info) {
-        alog.info(info);
-      });
+      } else if (results.length === 0) {
+        cb(null, null);
+      } else {
+        cb(null, new User(results[0]));
+      }
     });
 };
 
-User.loadByIds = function (ids, cb) {
-  var users = [];
-
+User.loadByIds = function (ids, callback) {
   alog.info('loadByIds#' + JSON.stringify(ids));
-  sqlClient.query(sqlQuery.User.Static.loadByIds, {ids: ids})
-    .on('result', function (res) {
-      res.on('row', function (row) {
-        alog.info(row);
 
-        var user = new User(row);
-
-        if (user.validation().result) {
-          users.push(user);
+  async.waterfall([
+    function (cb) {
+      db.select()
+        .where('id', ids)
+        .get('user', function (err, results, fields) {
+          if (err) {
+            cb(err);
+          } else {
+            cb(null, results);
+          }
+        });
+    },
+    function (results, cb) {
+      var users = [];
+      async.each(results, function (result, next) {
+        users.push(new User(result));
+        next();
+      }, function (err) {
+        if (err) {
+          cb(err);
+        } else {
+          cb(null, users);
         }
-      }).on('error', function (err) {
-        alog.error(err);
-        cb(err);
-      }).on('end', function (info) {
-        alog.info(info);
-
-        cb(null, users);
       });
-    });
+    }
+  ], function (err, users) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null, users);
+    }
+  });
 };
 
-User.loadByNames = function (names, cb) {
-  var users = [];
-
+User.loadByNames = function (names, callback) {
   alog.info('loadByNames#' + JSON.stringify(names));
-  sqlClient.query(sqlQuery.User.Static.loadByNames, {names: names})
-    .on('result', function (res) {
-      res.on('row', function (row) {
-        alog.info(row);
 
-        var user = new User(row);
-        if (user.validation().result) {
-          users.push(user);
+  async.waterfall([
+    function (cb) {
+      db.select()
+        .where('name', names)
+        .get('user', function (err, results, fields) {
+          if (err) {
+            cb(err);
+          } else {
+            cb(null, results);
+          }
+        });
+    },
+    function (results, cb) {
+      var users = [];
+      async.each(results, function (result, next) {
+        users.push(new User(result));
+        next();
+      }, function (err) {
+        if (err) {
+          cb(err);
+        } else {
+          cb(null, users);
         }
-      }).on('error', function (err) {
-        alog.error(err);
-        cb(err);
-      }).on('end', function (info) {
-        alog.info(info);
-
-        cb(null, users);
       });
-    });
+    }
+  ], function (err, users) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null, users);
+    }
+  });
 };
 
 // 유효한 이름과 이메일 주소 그리고 패스워드를 가지고 있는지 검사합니다.
@@ -152,71 +168,6 @@ User.validating = function (user, password, options) {
   return res;
 };
 
-// 유저를 데이터베이스에 추가합니다.
-User.signUp = function (user, password, cb) {
-  var validation = User.validating(user),
-    tmpUser;
-
-  alog.info(validation);
-  if (validation.result) {
-    alog.info('User.signUp');
-
-    tmpUser = new User(user);
-    tmpUser.password = password;
-    sqlClient.query(Query.signUp, tmpUser)
-      .on('result', function (res) {
-        delete tmpUser.password;
-
-        res.on('row', function (row) {
-          alog.info(row);
-        }).on('error', function (err) {
-          alog.error(err);
-          cb(err);
-        }).on('end', function (info) {
-          alog.info(info);
-
-          tmpUser.id = info.insertId;
-          cb(null, tmpUser);
-        });
-      });
-  } else {
-    cb('invalid User');
-  }
-};
-
-// 로그인을 처리하는 함수입니다.
-User.signIn = function (name, password, cb) {
-  var validation = User.validating({name: name}, password, { email: false });
-
-  console.log(JSON.stringify(validation));
-  if (validation.result) {
-    alog.info('User.signIn');
-    sqlClient.query(sqlQuery.User.loadByName, {name: name})
-      .on('result', function (res) {
-        res.on('row', function (row) {
-          alog.info(row);
-
-          //@TODO: 패스워드 암호화 후 비교
-          if (password === row.password) {
-            alog.info('User.signIn#{OK}' + name);
-            cb(null, new User(row));
-          } else {
-            alog.info('User.signIn#{NO}' + name);
-            cb('password incorrect');
-          }
-        }).on('error', function (err) {
-          alog.error(err);
-          cb(err);
-        }).on('end', function (info) {
-          alog.info(info);
-        });
-      });
-  } else {
-    alog.info('User.signIn#{NO}');
-    cb('validation failed');
-  }
-};
-
 User.resignWithoutSigning = function (user, cb) {
   if (User.validating(user)) {
     //@TODO 데이터 베이스에 DELETE 혹은 UPDATE 쿼리 날리기
@@ -246,16 +197,6 @@ User.prototype.equal = function (other) {
 
 User.prototype.validating = function (password, options) {
   return User.validating(this, password, options);
-};
-
-// 회원가입
-User.prototype.signUp = function (password, cb) {
-  User.signUp(this, password, cb);
-};
-
-// 로그인
-User.prototype.signIn = function (password, cb) {
-  User.signIn(this, password, cb);
 };
 
 // 패스워드 검사없이 탈퇴합니다.

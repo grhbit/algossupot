@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global sqlClient, alog*/
+/*global alog, async, db*/
 'use strict';
 var User = require('../../app/models/user');
 var Problem = require('../../app/models/problem');
@@ -27,24 +27,39 @@ var index = function (req, res) {
 var routes = {
   index: function (req, res) {
     if (req.session.user) {
-      var submitted = [];
-      sqlClient.query('SELECT * FROM `algossupot`.`submission` WHERE `userId` = :userId;', { userId: req.session.user.id })
-        .on('result', function (res) {
-          res.on('row', function (row) {
-            submitted.push({
-              num: row.problemId,
-              title: row.problemId,
-              status: row.state,
-              code: row.codeLength
+      async.waterfall([
+        function (cb) {
+          db.select()
+            .where({userId: req.session.user.id})
+            .get('submission', function (err, results, fields) {
+              if (err) {
+                cb(err);
+              } else {
+                cb(null, results);
+              }
             });
+        },
+        function (results, cb) {
+          var submitted = [];
+          async.each(results, function (result, next) {
+            submitted.push({
+              num: result.problemId,
+              title: result.problemId,
+              status: result.state,
+              code: result.codeLength
+            });
+            next();
+          }, function (err) {
+            cb(null, submitted);
           });
-        }).on('end', function (info) {
-          res.render('user_dashboard', {
-            user: req.session.user,
-            rows: submitted,
-            is_signed_in: true
-          });
+        }
+      ], function (err, submitted) {
+        res.render('user_dashboard', {
+          user: req.session.user,
+          rows: submitted,
+          is_signed_in: true
         });
+      });
     } else {
       res.render('default_template', { is_signed_in: false });
     }
