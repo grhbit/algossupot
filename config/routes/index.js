@@ -128,19 +128,18 @@ var routes = {
         }
       },
       get: function (req, res) {
-        var problemid = req.params.problemid,
-          problem = new Problem();
+        var problemid = req.params.problemid;
 
-        problem.loadById(problemid, function (err) {
+        Problem.loadById(problemid, function (err, problem) {
           if (err) {
             res.redirect('/');
           } else {
             res.render('problem', {
               is_signed_in: req.session.user != null,
               user: req.session.user,
-              problem_id: problem.id,
-              problem_title: problem.title,
-              problem_content: marked(problem.content)
+              problem_id: problem.metadata.slug,
+              problem_title: problem.metadata.name,
+              problem_content: '#Sample'
             });
           }
         });
