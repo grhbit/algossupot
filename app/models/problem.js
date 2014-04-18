@@ -2,42 +2,166 @@
 /*global async, alog, config, db*/
 'use strict';
 var path = require('path'),
-  fs = require('fs');
+  fs = require('fs'),
+  mkdirp = require('mkdirp');
 
-var Query = {
-  findById: 'SELECT * FROM `algossupot`.`problem` WHERE id=:id LIMIT 1;',
-  findBySlug: 'SELECT * FROM `algossupot`.`problem` WHERE slug=:slug LIMIT 1;',
-  insert: 'INSERT INTO `algossupot`.`problem` (`title`, `content`) SELECT :title, :content FROM DUAL WHERE NOT EXISTS ( SELECT * FROM `algossupot`.`problem` WHERE title = :title ) ;'
-}, Regex = {
+var Regex = {
   metadata: {
-    slug: /^[A-Za-z\- ]{1,32}$/,
-    name: /^[A-Za-z\-ㄱ-ㅎㅏ-ㅣ가-힣 ]{1,32}$/, // 스페이스 ' ' 문자 추가
-  },
-  contents: { }
+    name: /^[A-Za-z\-ㄱ-ㅎㅏ-ㅣ가-힣 ]{1,32}$/ // 스페이스 ' ' 문자 추가
+  }
 };
+
+function loadMetadataById(id, cb) {
+  db.select()
+    .where({id: id})
+    .limit(1)
+    .get('problem', function (err, results, fields) {
+      if (err) {
+        cb(err);
+      } else if (results.length === 0) {
+        cb('not found problem');
+      } else {
+        cb(null, {
+          id: id,
+          metadata: results[0]
+        });
+      }
+    });
+}
+
+function loadMetaDataBySlug(slug, cb) {
+  db.select()
+    .where({slug: slug})
+    .limit(1)
+    .get(config.db.tableName.problem, function (err, results, fields) {
+      if (err) {
+        cb(err);
+      } else if (results.length === 0) {
+        cb('not found problem');
+      } else {
+        cb(null, {
+          id: results[0].id,
+          metadata: results[0]
+        });
+      }
+    });
+}
+
+function loadContents(obj, cb) {
+  var indexPath = path.join(config.dir.storage, './problems', obj.metadata.slug, './index.json');
+
+  fs.stat(indexPath, function (err, stats) {
+    if (err) {
+      cb(err);
+      return;
+    }
+
+    fs.readFile(indexPath, function (err, data) {
+      if (err) {
+        cb(err);
+        return;
+      }
+
+      try {
+        var problemInfo = JSON.parse(data);
+        obj.contents = problemInfo.contents;
+        cb(null, obj);
+      } catch (e) {
+        cb(e);
+      }
+    });
+  });
+}
+
+function makeDirectoryFromSlug(slug, callback) {
+  var problemDir = path.join(config.dir.storage, './problems', slug);
+  mkdirp(problemDir, '0755', function (err, made) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null, problemDir);
+    }
+  });
+}
+
+function insertMetadataToDB(obj, callback) {
+  if (obj == null || obj.metadata == null) {
+    callback('invalid problem');
+    return;
+  }
+
+  async.waterfall([
+    function (cb) {
+      db.where({slug: obj.metadata.slug})
+        .count(config.db.tableName.problem, function (err, rows, fields) {
+          if (err) {
+            cb(err);
+          } else if (rows !== 0) {
+            cb('already exists problem');
+          } else {
+            cb(null);
+          }
+        });
+    },
+    function (cb) {
+      db.insert(config.db.tableName.problem, {
+        slug: obj.metadata.slug,
+        userId: obj.metadata.userId,
+        name: obj.metadata.name
+      }, function (err, info) {
+        if (err) {
+          cb(err);
+        } else {
+          obj.id = info.insertId;
+          cb(null, obj);
+        }
+      });
+    }
+  ], function (err, obj) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null, obj);
+    }
+  });
+}
+
+function writeContentsToFile(path, obj, callback) {
+  if (obj == null || obj.contents == null) {
+    callback('invalid contents');
+    return;
+  }
+
+  var data = {
+    index: {contents: obj.contents}
+  };
+
+  fs.writeFile(path, JSON.stringify(data), function (err) {
+    if (err) {
+      callback(err);
+      return;
+    }
+
+    callback(null, obj);
+  });
+}
 
 function Problem(params) {
   params = params || {};
   params.metadata = params.metadata || {};
   params.contents = params.contents || {};
 
+  this.id = null;
+
   // DB에 저장
   this.metadata = {
-    slug: params.metadata.slug || null,
     userId: params.metadata.userId || null,
     name: params.metadata.name || null
   };
 
   // 파일(index.json)으로 저장
   this.contents = {
-    description: params.contents.description || null,
-    input: params.contents.input || null,
-    output: params.contents.output || null,
-    sampleInput: params.contents.sampleInput || null,
-    sampleOutput: params.contents.sampleOutput || null,
-    note: params.contents.note || null,
-    timeLimit: params.contents.timeLimit || null,
-    memoryLimit: params.contents.memoryLimit || null
+    description: params.contents.description || null
   };
 }
 
@@ -53,7 +177,6 @@ Problem.validating = function (metadata, contents) {
   };
 
   if (metadata == null ||
-      metadata.slug == null || !Regex.metadata.slug.test(metadata.slug) ||
       metadata.name == null || !Regex.metadata.name.test(metadata.name)) {
     res.result = false;
     res.detail.metadata = false;
@@ -71,73 +194,30 @@ Problem.loadById = function (id, callback) {
   alog.info('Problem.loadById#' + id);
 
   async.waterfall([
-    function (cb) {
-      db.select()
-        .where({id: id})
-        .limit(1)
-        .get('problem', function (err, results, fields) {
-          if (err) {
-            cb(err);
-          } else {
-            cb(null, results[0]);
-          }
-        });
-    },
-    function (metadata, cb) {
-      var indexPath = path.join(config.dir.storage, './problems', metadata.slug, './index.json');
-
-      fs.stat(indexPath, function (err, stats) {
-        if (err) {
-          callback(err);
-        } else {
-          fs.readFile(indexPath, function (err, data) {
-            var problemInfo = JSON.parse(data);
-            cb(null, metadata, problemInfo.contents);
-          });
-        }
-      });
-    },
-  ], function (err, metadata, contents) {
+    function (cb) { cb(null, id); },
+    loadMetadataById,
+    loadContents,
+  ], function (err, obj) {
     if (err) {
       callback(err);
     } else {
-      callback(null, new Problem({
-        metadata: metadata,
-        contents: contents
-      }));
+      callback(null, new Problem(obj));
     }
   });
 };
 
 Problem.loadBySlug = function (slug, callback) {
-  var indexPath = path.join(config.dir.storage, './problems', slug, './index.json');
+  alog.info('Problem.loadBySlug#' + slug);
 
   async.waterfall([
-    function (cb) {
-      cb(null, slug);
-    },
-    Problem.exists,
-    function (exists, cb) {
-      if (exists) {
-        cb(null, indexPath);
-      } else {
-        cb('not found problem: slug#' + slug);
-      }
-    },
-    fs.readFile,
-    function (data, cb) {
-      var json = JSON.parse(data);
-      cb(null, new Problem({
-        metadata: json.metadata,
-        contents: json.contents
-      }));
-    }
-  ], function (err, problem) {
+    function (cb) { cb(null, slug); },
+    loadMetaDataBySlug,
+    loadContents,
+  ], function (err, obj) {
     if (err) {
-      alog.error(err);
       callback(err);
     } else {
-      callback(null, problem);
+      callback(null, new Problem(obj));
     }
   });
 };
@@ -155,102 +235,28 @@ Problem.exists = function (slug, callback) {
 };
 
 Problem.new = function (metadata, contents, callback) {
-  var slugDir = path.join(config.dir.storage, './problems', metadata.slug),
-    indexPath = path.join(slugDir, './index.json');
-
   async.waterfall([
-    function (cb) {
-      cb(null, metadata.slug);
-    },
-    Problem.exists,
-    function (exists, cb) {
-      if (exists) {
-        cb('already exists');
-      } else {
-        cb(null, slugDir);
-      }
-    },
-    fs.mkdir,
-    function (cb) {
-      cb(null, indexPath, JSON.stringify({
+    function (cb) { cb(null, {metadata: metadata, contents: contents}); },
+    insertMetadataToDB,
+    function (obj, cb) { cb(null, obj.metadata.slug); },
+    makeDirectoryFromSlug,
+    function (dir, cb) {
+      cb(null, path.join(dir, './index.json'), {
         metadata: metadata,
         contents: contents
-      }));
-    },
-    fs.writeFile,
-    function (cb) {
-      db.where({slug: metadata.slug})
-        .limit(1)
-        .count('problem', function (err, results, fields) {
-          if (err) {
-            cb(err);
-          } else {
-            if (results === 0) {
-              cb();
-            } else {
-              cb('already exists problem\'s slug');
-            }
-          }
-        });
-    },
-    function (cb) {
-      db.insert('problem', {
-        slug: metadata.slug,
-        userId: metadata.userId,
-        name: metadata.name
-      }, function (err, info) {
-        if (err) {
-          cb(err);
-        } else {
-          cb();
-        }
       });
-    }
-  ], function (err) {
+    },
+    writeContentsToFile
+  ], function (err, obj) {
     if (err) {
       callback(err);
     } else {
-      callback(null, new Problem({
-        metadata: metadata,
-        contents: contents
-      }));
+      callback(null, new Problem(obj));
     }
   });
-};
-
-Problem.update = function (metadata, contents, callback) {
-  async.waterfall([
-    function (cb) {
-      cb(null, metadata.slug);
-    },
-    Problem.exists,
-    function (exists, cb) {
-      if (!exists) {
-        cb('not exists');
-      } else {
-        cb(null, path.join(config.dir.storage, './problems', metadata.slug, './index.json'));
-      }
-    },
-    fs.exists,
-    function (exists, cb) {
-    },
-    function (cb) {
-      cb(null);
-    }
-  ], function (err) {
-  });
-};
-
-// 문제를 갱신합니다. 없으면 생성 있으면 업데이트
-Problem.commit = function (problem, cb) {
-  var validation = problem.validating();
-  if (validation.result) {
-  } else {
-    alog.error('invalid problem', validation);
-    cb('invliad problem');
-  }
 };
 
 //#endregion - static functions
+
 
 module.exports = Problem;
