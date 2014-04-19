@@ -2,6 +2,20 @@
 /*global alog, async, config, db*/
 'use strict';
 
+module.exports = function (sequelize, DataTypes) {
+  var Submission = sequelize.define('Submission', {
+    state: DataTypes.INTEGER
+  }, {
+    associate: function (models) {
+      return undefined;
+    }
+  });
+
+  Submission.sync();
+
+  return Submission;
+};
+
 function loadSubmissionById(id, callback) {
   db.select()
     .where({id: id})
@@ -114,4 +128,4 @@ Submission.submit = function (submission, callback) {
   });
 };
 
-module.exports = Submission;
+// module.exports = Submission;

@@ -5,10 +5,20 @@ var path = require('path'),
   fs = require('fs'),
   mkdirp = require('mkdirp');
 
-var Regex = {
-  metadata: {
-    name: /^[A-Za-z\-ㄱ-ㅎㅏ-ㅣ가-힣 ]{1,32}$/ // 스페이스 ' ' 문자 추가
-  }
+module.exports = function (sequelize, DataTypes) {
+  var Problem = sequelize.define('Problem', {
+    slug: {
+      type: DataTypes.STRING,
+      validate: { is: ['[[a-z-]', 'i'] }
+    },
+    name: {
+      type: DataTypes.STRING,
+      validate: { is: ['^[a-zㄱ-ㅎㅏ-ㅣ가-힣\\- ]{1,32}$', 'i'] }
+    }
+  }, {});
+
+  Problem.sync();
+  return Problem;
 };
 
 function loadMetadataById(id, cb) {
@@ -259,4 +269,4 @@ Problem.new = function (metadata, contents, callback) {
 //#endregion - static functions
 
 
-module.exports = Problem;
+// module.exports = Problem;

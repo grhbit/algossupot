@@ -10,6 +10,7 @@ var path = require('path');
 var async = require('async');
 var winston = require('winston');
 var config = require('./config');
+var models = require('./app/models');
 
 var DBLib = require('mysql-activerecord');
 var db = new DBLib.Adapter({
@@ -61,6 +62,15 @@ if ('development' === app.get('env')) {
 
 routes.use(app);
 
-http.createServer(app).listen(app.get('port'), function () {
-  alog.info('Express server listening on port ' + app.get('port'));
-});
+models
+  .sequelize
+  .sync({force: true})
+  .complete(function (err) {
+    if (err) {
+      throw err;
+    }
+
+    http.createServer(app).listen(app.get('port'), function () {
+      alog.info('Express server listening on port ' + app.get('port'));
+    });
+  });

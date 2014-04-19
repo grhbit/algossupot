@@ -26,7 +26,7 @@ var index = function (req, res) {
 // For tests.
 var routes = {
   index: function (req, res) {
-    if (req.session.user) {
+    if (req.session && req.session.user) {
       async.waterfall([
         function (cb) {
           db.select()
