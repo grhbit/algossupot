@@ -7,7 +7,11 @@ var fs = require('fs'),
   sequelize = new Sequelize('algossupot', 'algossupotadmin', 'ncloudme', {
     dialect: 'mariadb',
     host: '127.0.0.1',
-    port: 3306
+    port: 3306,
+    define: {
+      charset: 'utf8',
+      collate: 'utf8_general_ci'
+    }
   }),
   mariadb = {};
 

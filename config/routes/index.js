@@ -6,6 +6,7 @@ var Problem = require('../../app/models/problem');
 var Submission = require('../../app/models/submission');
 var UserController = require('../../app/controllers/user');
 var AuthController = require('../../app/controllers/auth');
+var ProblemController = require('../../app/controllers/problem');
 
 var marked = require('marked');
 marked.setOptions({
@@ -130,8 +131,10 @@ var routes = {
           });
         }
       },
-      get: function (req, res) {
+      get: function (req, res, next) {
         var problemid = req.params.problemid;
+
+        return ProblemController.loadById(req, res, next);
 
         Problem.loadById(problemid, function (err, problem) {
           if (err) {

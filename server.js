@@ -70,6 +70,13 @@ models
       throw err;
     }
 
+    models.Auth.signUp('user', 'testtest', function (err, auth) {});
+
+    models.Problem.create({
+      slug: 'maze',
+      name: '미로찾기'
+    });
+
     http.createServer(app).listen(app.get('port'), function () {
       alog.info('Express server listening on port ' + app.get('port'));
     });
