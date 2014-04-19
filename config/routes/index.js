@@ -142,7 +142,7 @@ var routes = {
               user: req.session.user,
               problem_id: problem.metadata.slug,
               problem_title: problem.metadata.name,
-              problem_content: '#Sample'
+              problem_content: marked(problem.metadata.problem_content)
             });
           }
         });

@@ -2,7 +2,8 @@
 /*global async, alog, config, db*/
 'use strict';
 var path = require('path'),
-  fs = require('fs');
+  fs = require('fs'),
+  marked = require('marked');
 
 var Query = {
   findById: 'SELECT * FROM `algossupot`.`problem` WHERE id=:id LIMIT 1;',
@@ -84,7 +85,7 @@ Problem.loadById = function (id, callback) {
         });
     },
     function (metadata, cb) {
-      var indexPath = path.join(config.dir.storage, './problems', metadata.slug, './index.json');
+      var indexPath = path.join(config.dir.storage, './problems/', id, './index.json');
 
       fs.stat(indexPath, function (err, stats) {
         if (err) {
@@ -92,19 +93,37 @@ Problem.loadById = function (id, callback) {
         } else {
           fs.readFile(indexPath, function (err, data) {
             var problemInfo = JSON.parse(data);
-            cb(null, metadata, problemInfo.contents);
+            metadata.info = problemInfo;
+            cb(null, metadata);
           });
         }
       });
     },
-  ], function (err, metadata, contents) {
+    function (metadata, cb) {
+      var descriptionPath = path.join(config.dir.storage, './problems/', id, './description.md');
+
+      fs.stat(descriptionPath, function (err, stats) {
+        if (err) {
+          callback(err);
+        } else {
+          fs.readFile(descriptionPath, function (err, data) {
+            // metadata.problem_content = marked(String(data));
+            metadata.problem_content = String(data);
+            cb(null, metadata);
+          });
+        }
+      });
+    }
+  ], function (err, metadata) {
     if (err) {
       callback(err);
     } else {
-      callback(null, new Problem({
-        metadata: metadata,
-        contents: contents
-      }));
+      // var problem = new Problem({
+      //   metadata: metadata
+      // });
+      var problem = {};
+      problem.metadata = metadata;
+      callback(null, problem);
     }
   });
 };
