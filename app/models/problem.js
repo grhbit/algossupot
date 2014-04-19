@@ -13,13 +13,21 @@ InstanceMethods.loadContents = function (callback) {
     indexPath = path.join(problemDir, './index.json'),
     descriptionPath = path.join(problemDir, './description.md'),
     checkFiles = function (cb) {
-      var existsIndex = fs.statSync(indexPath).isFile(),
-        existsDesc = fs.statSync(descriptionPath).isFile();
+      var checkExists = function (path, cb) {
+        fs.stat(path, function (err, stat) {
+          if (err) {
+            return cb(false);
+          }
+          return cb(stat.isFile());
+        });
+      };
 
-      if (existsIndex && existsDesc) {
-        return cb(null);
-      }
-      return cb('not exists problem index or description');
+      async.every([indexPath, descriptionPath], checkExists, function (result) {
+        if (result) {
+          return cb();
+        }
+        return cb('not exists problem index or description');
+      });
     },
     readContents = function (cb) {
       async.parallel({
