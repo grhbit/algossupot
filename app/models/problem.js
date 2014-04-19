@@ -3,14 +3,29 @@
 'use strict';
 var path = require('path'),
   fs = require('fs'),
-  marked = require('marked');
+  marked = require('marked'),
+  mkdirp = require('mkdirp');
 
 var Regex = {
   metadata: {
-    slug: /^[A-Za-z\- ]{1,32}$/,
-    name: /^[A-Za-z\-ㄱ-ㅎㅏ-ㅣ가-힣 ]{1,32}$/, // 스페이스 ' ' 문자 추가
-  },
-  contents: { }
+    name: /^[A-Za-z\-ㄱ-하-ㅣ가-힣 ]{1,32}$/
+  }
+};
+
+module.exports = function (sequelize, DataTypes) {
+  var Problem = sequelize.define('Problem', {
+    slug: {
+      type: DataTypes.STRING,
+      validate: { is: ['[[a-z-]', 'i'] }
+    },
+    name: {
+      type: DataTypes.STRING,
+      validate: { is: ['^[a-zㄱ-ㅎㅏ-ㅣ가-힣\\- ]{1,32}$', 'i'] }
+    }
+  }, {});
+
+  Problem.sync();
+  return Problem;
 };
 
 function Problem(params) {
@@ -18,23 +33,17 @@ function Problem(params) {
   params.metadata = params.metadata || {};
   params.contents = params.contents || {};
 
+  this.id = null;
+
   // DB에 저장
   this.metadata = {
-    slug: params.metadata.slug || null,
     userId: params.metadata.userId || null,
     name: params.metadata.name || null
   };
 
   // 파일(index.json)으로 저장
   this.contents = {
-    description: params.contents.description || null,
-    input: params.contents.input || null,
-    output: params.contents.output || null,
-    sampleInput: params.contents.sampleInput || null,
-    sampleOutput: params.contents.sampleOutput || null,
-    note: params.contents.note || null,
-    timeLimit: params.contents.timeLimit || null,
-    memoryLimit: params.contents.memoryLimit || null
+    description: params.contents.description || null
   };
 }
 
@@ -50,7 +59,6 @@ Problem.validating = function (metadata, contents) {
   };
 
   if (metadata == null ||
-      metadata.slug == null || !Regex.metadata.slug.test(metadata.slug) ||
       metadata.name == null || !Regex.metadata.name.test(metadata.name)) {
     res.result = false;
     res.detail.metadata = false;
@@ -125,5 +133,3 @@ Problem.loadById = function (id, callback) {
 };
 
 //#endregion - static functions
-
-module.exports = Problem;

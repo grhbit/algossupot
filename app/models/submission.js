@@ -1,82 +1,131 @@
 /*jslint node: true, eqeq: true */
-/*global alog, db*/
+/*global alog, async, config, db*/
 'use strict';
 
-var Query = {
-  findById: 'SELECT * FROM algossupot.submission WHERE id=:id LIMIT 1;',
-  getRecent: '',
-  pushSubmit:
-    'INSERT INTO `algossupot`.`submission` (`problemId`, `userId`, `language`, `state`, `codeLength`, `timestamp`) SELECT :problemId, :userId, :language, :state, :codeLength, :timestamp FROM DUAL WHERE EXISTS (SELECT * FROM `algossupot`.`user` WHERE id = :userId);'
+module.exports = function (sequelize, DataTypes) {
+  var Submission = sequelize.define('Submission', {
+    state: DataTypes.INTEGER
+  }, {
+    associate: function (models) {
+      return undefined;
+    }
+  });
+
+  Submission.sync();
+
+  return Submission;
 };
 
-function Submission() {
-  this.id = null;
-  this.problemId = null;
-  this.userId = null;
-  this.language = null;
-  this.state = null;
-  this.codeLength = null;
-  this.timestamp = null;
-}
-
-Submission.prototype.isValid = function () {
-  return this.problemId != null ||
-    this.userId != null ||
-    this.language != null ||
-    this.state != null ||
-    this.codeLength != null ||
-    this.timestamp != null;
-};
-
-Submission.loadById = function (id, cb) {
-  alog.info('Submission.loadById#' + id);
+function loadSubmissionById(id, callback) {
   db.select()
     .where({id: id})
     .limit(1)
-    .get('submission', function (err, results, fields) {
+    .get(config.db.tableName.submission, function (err, results, fields) {
       if (err) {
-        cb(err);
+        callback(err);
+      } else if (results.length === 0) {
+        callback('not found submission');
       } else {
-        if (results.length !== 0) {
-          cb(null, new Submission(results[0]));
-        } else {
-          cb('not found submission#' + id);
-        }
+        callback(null, {
+          id: id,
+          problemId: results[0].problemId,
+          userId: results[0].userId,
+          state: results[0].state
+        });
       }
     });
-};
+}
 
-Submission.submit = function (submission, cb) {
-  db.insert('submission', {
-    problemId: submission.problemId,
-    userId: submission.userId,
-    language: submission.language,
-    state: submission.state,
-    codeLength: submission.codeLength,
-    timestamp: submission.timestamp
+function insertToDB(obj, callback) {
+  db.insert(config.db.tableName.submission, {
+    'problem_id': obj.problemId,
+    'user_id': obj.userId,
+    'state': obj.state
   }, function (err, info) {
     if (err) {
-      cb(err);
+      callback(err);
     } else {
-      cb(null, info);
+      obj.id = info.insertId;
+      callback(null, obj);
+    }
+  });
+}
+
+function Submission() {
+  this.id = null;
+
+  this.problemId = null;
+  this.userId = null;
+  this.state = null;
+}
+
+Submission.validating = function (submission, callback) {
+  if (submission) {
+    var hasProblemId = submission.problemId != null,
+      hasUserId = submission.userId != null,
+      hasState = submission.state != null;
+
+    callback(null, {
+      result: hasProblemId && hasUserId && hasState
+    });
+  } else {
+    callback('submission is null');
+  }
+};
+
+Submission.loadById = function (id, callback) {
+  alog.info('Submission.loadById#' + id);
+  loadSubmissionById(id, function (err, obj) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null, new Submission(obj));
     }
   });
 };
 
-Submission.prototype.submit = function (cb) {
-  Submission.submit(this, cb);
-};
+Submission.submit = function (user, problem, code, callback) {
+  user = user || {};
+  problem = problem || {};
+  code = code || {};
 
-Submission.prototype.changeState = function (state, cb) {
-  db.update('submission', {
-    state: state
-  }, function (err) {
-    if (err) {
-      cb(err);
-    } else {
+  async.waterfall([
+    function (cb) {
+      if (user.id == null || problem.id == null) {
+        cb('invalid submit');
+      } else {
+        cb(null, {
+          problemId: problem.id,
+          userId: user.id,
+          state: 0
+        });
+      }
+    },
+    insertToDB,
+    //@TODO: 채점 요청
+    function (cb) {
       cb();
     }
+  ], function (err) {
+    if (err) {
+      callback(err);
+    } else {
+      callback(null);
+    }
   });
 };
 
-module.exports = Submission;
+Submission.submit = function (submission, callback) {
+  async.waterfall([
+    function (cb) { cb(null, submission); },
+    insertToDB
+  ], function (err) {
+    if (err) {
+      callback(err);
+    } else {
+      callback();
+    }
+  });
+};
+
+// module.exports = Submission;

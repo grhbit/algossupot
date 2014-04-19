@@ -3,18 +3,21 @@
   "version": "0.0.1",
   "private": true,
   "scripts": {
-    "start": "node app.js"
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "3.4.8",
     "jade": "*",
     "async": "*",
     "hashish": "*",
-    "underscore": "*",
+    "lodash": "*",
     "winston": "*",
     "marked": "*",
     "connect-redis": "1.4.7",
     "mysql-activerecord": "*",
-    "crypto": "*"
+    "crypto": "*",
+    "mkdirp": "*",
+    "sequelize": "~1.7.2",
+    "mariasql": "~0.1.20"
   }
 }
