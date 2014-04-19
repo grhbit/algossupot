@@ -91,6 +91,9 @@ var routes = {
   submissions: {},
   problems: {
     index: {
+      get: function (req, res) {
+        res.render('problem_list', {});
+      },
       post: function (req, res) {
         var title = req.body.title,
           content = req.body.content,
@@ -139,7 +142,7 @@ var routes = {
               user: req.session.user,
               problem_id: problem.metadata.slug,
               problem_title: problem.metadata.name,
-              problem_content: '#Sample'
+              problem_content: marked(problem.metadata.problem_content)
             });
           }
         });
@@ -159,6 +162,7 @@ exports.use = function (app) {
   app.put('/users/:userid', routes.users.id.put);
   app.del('/users/:userid', routes.users.id.del);
 
+  app.get('/problems', routes.problems.index.get);
   app.post('/problems', routes.problems.index.post);
   app.get('/problems/:problemid', routes.problems.id.get);
   app.post('/problems/:problemid/submit', routes.problems.id.submit.post);
