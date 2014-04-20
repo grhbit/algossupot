@@ -73,12 +73,16 @@ module.exports = function (sequelize, DataTypes) {
       validate: { is: ['^[a-zㄱ-ㅎㅏ-ㅣ가-힣\\- ]{1,32}$', 'i'] }
     }
   }, {
+    associate: function (models) {
+      Problem
+        .hasMany(models.Submission)
+        .belongsTo(models.User);
+    },
     classMethods: ClassMethods,
     instanceMethods: InstanceMethods
   });
 
   _Problem = Problem;
 
-  Problem.sync();
   return Problem;
 };

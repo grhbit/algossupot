@@ -22,7 +22,7 @@ Controller.loadById = function (req, res, next) {
           return res.render('problem', {
             is_signed_in: req.session.user != null,
             user: req.session.user,
-            problem_id: metadata.slug,
+            problem_id: problem.id,
             problem_title: metadata.name,
             problem_content: marked(String(metadata.problem_content))
           });

@@ -17,6 +17,7 @@ Controller.signIn = function (req, res, next) {
       res.redirect('/');
       res.end();
     } else {
+      alog.log(auth);
       req.session.user = auth;
       res.redirect('/');
       res.end();
