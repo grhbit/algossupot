@@ -1,9 +1,10 @@
 /*jslint node: true, eqeq: true */
 /*global alog, async, db*/
 'use strict';
-var User = require('../../app/models/user');
-var Problem = require('../../app/models/problem');
-var Submission = require('../../app/models/submission');
+var Auth = require('../../app/models').Auth;
+var User = require('../../app/models').User;
+var Problem = require('../../app/models').Problem;
+var Submission = require('../../app/models').Submission;
 var UserController = require('../../app/controllers/user');
 var AuthController = require('../../app/controllers/auth');
 var ProblemController = require('../../app/controllers/problem');
@@ -30,24 +31,23 @@ var routes = {
     if (req.session && req.session.user) {
       async.waterfall([
         function (cb) {
-          db.select()
-            .where({userId: req.session.user.id})
-            .get('submission', function (err, results, fields) {
-              if (err) {
-                cb(err);
-              } else {
-                cb(null, results);
-              }
-            });
+          Submission.findAll({
+            include: [User, Problem]
+          }).success(function (submissions) {
+            cb(null, submissions);
+          }).error(function (err) {
+            cb(err);
+          });
         },
         function (results, cb) {
           var submitted = [];
           async.each(results, function (result, next) {
+            alog.info(require('util').inspect(result.values));
             submitted.push({
-              num: result.problemId,
-              title: result.problemId,
+              num: result.problem.id,
+              title: result.problem.name,
               status: result.state,
-              code: result.codeLength
+              code: ''
             });
             next();
           }, function (err) {
@@ -93,62 +93,56 @@ var routes = {
   problems: {
     index: {
       get: function (req, res) {
-        res.render('problem_list', {});
+        res.render('problem_list', { is_signed_in: req.session.user != null });
       },
       post: function (req, res) {
-        var title = req.body.title,
-          content = req.body.content,
-          problem;
-
-        problem = new Problem();
-        problem.title = title;
-        problem.content = content;
-
-        problem.submit(function (err) {
-          res.redirect('/');
-        });
+        res.redirect('/');
       }
     },
     id: {
       submit: {
         post: function (req, res) {
-          var src = req.body['source-code-form'],
-            submission = new Submission();
+          var src = req.body['source-code-form'];
 
-          submission.problemId = req.params.problemid;
-          submission.userId = req.session.user.id;
-          submission.language = 'C++';
-          submission.state = 0;
-          submission.codeLength = src.length;
-          submission.timestamp = (Date.now() / 1000);
-
-          submission.submit(function (err) {
-            if (err) {
-              res.redirect('/');
-            } else {
-              res.redirect('/');
+          alog.info(req.session.user);
+          User.find(req.session.user.id).success(function (user) {
+            if (!user) {
+              return res.redirect('/');
             }
+
+            alog.info(user);
+
+            Problem.find(req.params.problemid).success(function (problem) {
+              if (!problem) {
+                return res.redirect('/');
+              }
+
+              Submission.create({state: 0})
+                .success(function (submission) {
+                  user.addSubmission(submission).success(function () {
+                    problem.addSubmission(submission).complete(function (err) {
+                      res.redirect('/');
+                    });
+
+                  });
+                })
+                .error(function (err) {
+                  alog.error(err);
+                  res.redirect('/');
+                });
+
+            }).error(function (err) {
+              alog.error(err);
+              res.redirect('/');
+            });
+          }).error(function (err) {
+            alog.error(err);
+            res.redirect('/');
           });
         }
       },
       get: function (req, res, next) {
-        var problemid = req.params.problemid;
-
         return ProblemController.loadById(req, res, next);
-
-        Problem.loadById(problemid, function (err, problem) {
-          if (err) {
-            res.redirect('/');
-          } else {
-            res.render('problem', {
-              is_signed_in: req.session.user != null,
-              user: req.session.user,
-              problem_id: problem.metadata.slug,
-              problem_title: problem.metadata.name,
-              problem_content: marked(problem.metadata.problem_content)
-            });
-          }
-        });
       }
     }
   }

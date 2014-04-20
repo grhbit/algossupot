@@ -2,6 +2,8 @@
 /*global alog, async, db*/
 'use strict';
 
+var _User, ClassMethods = {};
+
 module.exports = function (sequelize, DataTypes) {
   var User = sequelize.define('User', {
     name: {
@@ -14,12 +16,14 @@ module.exports = function (sequelize, DataTypes) {
     }
   }, {
     associate: function (models) {
-      User.hasMany(models.Submission);
-      User.hasMany(models.Problem);
+      User
+        .hasOne(models.Auth)
+        .hasMany(models.Submission)
+        .hasMany(models.Problem);
     }
   });
 
-  User.sync();
+  _User = User;
 
   return User;
 };

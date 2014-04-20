@@ -40,17 +40,31 @@ ClassMethods.signUp = function (name, password, callback) {
       _Auth.create({
         name: name,
         password: encryptedPassword
-      }).success(function (auth) {
-        cb(null, auth);
-      }).error(function (err) {
-        cb(err);
-      });
+      })
+        .success(function (auth) {
+          cb(null, auth);
+        })
+        .error(function (err) {
+          cb(err);
+        });
+    },
+    insertToUserTable = function (auth, cb) {
+      require('../models').User.create({
+        name: auth.name
+      })
+        .success(function (user) {
+          cb(null, user);
+        })
+        .error(function (err) {
+          cb(err);
+        });
     };
 
   async.waterfall([
     checkNotExists,
     encryptPassword,
-    insertAuthInfo
+    insertAuthInfo,
+    insertToUserTable
   ], function (err, auth) {
     if (err) {
       return callback(err);
@@ -105,11 +119,13 @@ module.exports = function (sequelize, DataTypes) {
     },
     password: DataTypes.STRING
   }, {
+    associate: function (models) {
+      Auth.belongsTo(models.User);
+    },
     classMethods: ClassMethods
   });
 
   _Auth = Auth;
 
-  Auth.sync();
   return Auth;
 };

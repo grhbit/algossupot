@@ -15,9 +15,9 @@ block content
         each item in rows
           tr
             td
-              a(href='#')= item.num
+              a(href='/problems/' + item.num)= item.num
             td
-              a(href='#')= item.title
+              a(href='/problems/' + item.num)= item.title
             td= item.status
             td
               a(href='#')= item.code
