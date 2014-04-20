@@ -67,6 +67,23 @@ except AssertionError, e:
     sys.stderr.write(str(e))
     sys.exit(os.EX_UNAVAILABLE)
 
+# 반환 코드를 문자로 바꿔준다. sample2.py에서 가져옴
+# 하지만 문자로 바꿔줘도 뭔지 알기 어려우므로 아래 설명을 참고.
+# PD: Pending? (디폴트 값 인것 같다.)
+# OK: 정상 종료
+# RF: 금지된 함수 사용
+# ML: 메모리 초과
+# OL: 출력 초과
+# TL: 시간 초과
+# RT: 런타임 에러
+# AT: 비정상 종료 (exit-code <> 0)
+# IE: 에러
+# BP: Bad Policy?
+def result_name(r):
+    return ('PD', 'OK', 'RF', 'ML', 'OL', 'TL', 'RT', 'AT', 'IE', 'BP')[r] \
+        if r in xrange(10) else None
+
+
 #@TODO 추후 이 클래스 다른 모듈로 분리
 class Sandbox
     pass
