@@ -36,6 +36,7 @@
 
 import os
 import sys
+import tempfile
 
 #@TODO Sandbox 만들어야되는데.. 후우..
 # syscalls 테이블
@@ -83,12 +84,49 @@ def result_name(r):
     return ('PD', 'OK', 'RF', 'ML', 'OL', 'TL', 'RT', 'AT', 'IE', 'BP')[r] \
         if r in xrange(10) else None
 
-
 #@TODO 추후 이 클래스 다른 모듈로 분리
-class Sandbox
-    pass
+class MiniSandbox(SandboxPolicy, Sandbox):
+    syscalls_table = None
+    syscalls_safe = dict(i686 = set([3, 4, 19, 45, 54, 90, 91, 122, 125, 140, 163, \
+        192, 197, 224, 243, 252, ]), x86_64 = set([0, 1, 5, 8, 9, 10, 11, 12, \
+        16, 25, 63, 158, 231, ]), )
+
+    def __init__(self, *args, **kwds):
+        self.syscalls_table = [self._KILL_RF, ] * 1024
+        for syscall_num in MiniSandbox.syscalls_safe[machine]:
+            self.syscalls_table[syscall_num] = self._CONT
+
+        kwds['policy'] = self
+        SandboxPolicy.__init__(self)
+        Sandbox.__init__(self, *args, **kwds)
+    def __call__(self, event, action):
+        if event.type in (S_EVENT_SYSCALL, S_EVENT_SYSRET):
+            if machine is 'x86_64' and event.ext0 is not 0:
+                return self._KILL_RF(event, action)
+            return self.syscalls_table[event.data](event, action)
+
+        return SandboxPolicy.__call__(self, event, action)
+
+    def _CONT(self, event, action):
+        action.type = S_ACTION_CONT
+        return action
+
+    def _KILL_RF(self, event, action):
+        action.type, action.data = S_ACTION_KILL, S_RESULT_RF
+        return action
+
+class CompileModule:
+    def __init__(self):
+
+    def compile(self):
 
 def main(args):
+    # sandbox에서 처리를 해주겠지만 Root 권한으로 이 스크립트가 실행되는 것을 막는다.
+    isRoot = os.getuid() == 0
+    if isRoot is True:
+        sys.stderr.write("Operation not permitted through root.\n")
+        return os.EX_UNAVAILABLE
+
     #@TODO args 어떤 식으로 받을 지 고민..
     # args[1] submission_id
     # args[2] problem_id
