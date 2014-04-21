@@ -7,7 +7,7 @@ function Controller() {
   return undefined;
 }
 
-Controller.signIn = function (req, res, next) {
+Controller.signIn = function (req, res) {
   var userid = req.body.userid,
     password = req.body.password;
 
@@ -15,26 +15,24 @@ Controller.signIn = function (req, res, next) {
     if (err) {
       alog.error(err);
       res.redirect('/');
-      res.end();
     } else {
       alog.log(auth);
       req.session.user = auth;
       res.redirect('/');
-      res.end();
     }
   });
 };
 
-Controller.signOut = function (req, res, next) {
+Controller.signOut = function (req, res) {
   req.session.destroy();
   res.redirect('/');
 };
 
-Controller.signUp = function (req, res, next) {
+Controller.signUp = function (req, res) {
   res.render('auth/signup');
 };
 
-Controller.signUp_recvData = function (req, res, next) {
+Controller.signUp_recvData = function (req, res) {
   var userid = req.body.userid,
     password = req.body.password;
 
@@ -43,12 +41,8 @@ Controller.signUp_recvData = function (req, res, next) {
       alog.error('signup fail!');
       alog.error(err);
       res.redirect('/');
-      res.end();
-
     } else {
       res.redirect('/');
-      res.end();
-
     }
   });
 };
