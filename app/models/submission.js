@@ -35,7 +35,7 @@ InstanceMethods.loadSourceCode = function (callback) {
         });
     },
     getSourceCodePath = function (problem_id, user_id, cb) {
-      cb(null, path.join(config.dir.Submission, user_id, problem_id));
+      return path.join(config.dir.submission, user_id.toString(), problem_id.toString());
     };
 
   async.series({
@@ -46,10 +46,11 @@ InstanceMethods.loadSourceCode = function (callback) {
       return callback(err);
     }
 
-    var sourceCodeDir = getSourceCodePath(results.problem.id, results.user.id),
+    var sourceCodeExt = '.' + (config.lang.ext[self.lang] || ''),
+      sourceCodeDir = getSourceCodePath(results.problem.id, results.user.id),
       sourceCodePath = path.join(sourceCodeDir, self.id.toString());
     async.waterfall([
-      async.apply(fs.readFile, sourceCodePath)
+      async.apply(fs.readFile, sourceCodePath + sourceCodeExt)
     ], function (err, data) {
       if (err) {
         return callback(err);
@@ -97,11 +98,14 @@ InstanceMethods.saveSourceCode = function (src, callback) {
       return callback(err);
     }
 
-    var sourceCodeDir = getSourceCodePath(results.problem.id, results.user.id),
+    // Dos2Unix
+    src = src.replace(/(\x0d)/g, "");
+    var sourceCodeExt = '.' + (config.lang.ext[self.lang] || ''),
+      sourceCodeDir = getSourceCodePath(results.problem.id, results.user.id),
       sourceCodePath = path.join(sourceCodeDir, self.id.toString());
     async.waterfall([
       async.apply(mkdirp, sourceCodeDir),
-      async.apply(fs.writeFile, sourceCodePath, src, {encoding: 'utf-8'})
+      async.apply(fs.writeFile, sourceCodePath + sourceCodeExt, src, {encoding: 'utf-8'})
     ], function (err) {
       if (err) {
         return callback(err);
@@ -113,7 +117,15 @@ InstanceMethods.saveSourceCode = function (src, callback) {
 
 module.exports = function (sequelize, DataTypes) {
   var Submission = sequelize.define('Submission', {
-    state: DataTypes.INTEGER
+    state: {
+      type: DataTypes.INTEGER,
+      defaultValue: config.state.indexOf('PD')
+    },
+    lang: {
+      type: DataTypes.STRING,
+      defaultValue: 'C++', //　테스트용
+      isIn: [config.lang.list],
+    }
   }, {
     associate: function (models) {
       Submission

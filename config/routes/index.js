@@ -8,6 +8,7 @@ var Submission = require('../../app/models').Submission;
 var UserController = require('../../app/controllers/user');
 var AuthController = require('../../app/controllers/auth');
 var ProblemController = require('../../app/controllers/problem');
+var SubmissionController = require('../../app/controllers/submission');
 
 var marked = require('marked');
 marked.setOptions({
@@ -51,6 +52,7 @@ var routes = {
               num: result.problem.id,
               title: result.problem.name,
               status: result.state,
+              submission_id: result.id,
               code: ''
             });
             next();
@@ -78,31 +80,8 @@ var routes = {
         res.end();
       }
     },
-    id: {
-      get: function (req, res) {
-        res.end();
-      },
-      post: function (req, res) {
-        res.end();
-      },
-      put: function (req, res) {
-        res.end();
-      },
-      del: function (req, res) {
-        res.end();
-      }
-    }
   },
-  submissions: {},
   problems: {
-    index: {
-      get: function (req, res) {
-        res.render('problem_list', { is_signed_in: req.session.user != null });
-      },
-      post: function (req, res) {
-        res.redirect('/');
-      }
-    },
     id: {
       submit: {
         post: function (req, res) {
@@ -146,9 +125,6 @@ var routes = {
             res.redirect('/');
           });
         }
-      },
-      get: function (req, res, next) {
-        return ProblemController.loadById(req, res, next);
       }
     }
   }
@@ -160,15 +136,14 @@ exports.use = function (app) {
   app.get('/users', routes.users.index.get);
   app.post('/users', routes.users.index.post);
 
-  app.get('/users/:userid', routes.users.id.get);
-  app.post('/users/:userid', routes.users.id.post);
-  app.put('/users/:userid', routes.users.id.put);
-  app.del('/users/:userid', routes.users.id.del);
+  app.get('/problems', ProblemController.renderProblemList);
+  app.get('/problems/:problemid', ProblemController.load, ProblemController.renderProblemPage);
+  app.post('/problems/:problemid/submit', AuthController.requireAuthentication, ProblemController.recvSubmit);
 
-  app.get('/problems', routes.problems.index.get);
-  app.post('/problems', routes.problems.index.post);
-  app.get('/problems/:problemid', routes.problems.id.get);
-  app.post('/problems/:problemid/submit', routes.problems.id.submit.post);
+  app.get('/submission/:submission_id/view-source', SubmissionController.loadWithSourceCode, function (req, res) {
+    res.header("Content-Type", "application/json; charset=utf-8");
+    res.end(req.models.submission.sourceCode);
+  });
 
   app.get('/admin/problem', function (req, res) {
     res.render('admin/problem');

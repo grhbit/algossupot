@@ -22,4 +22,17 @@ Config.db = {
   }
 };
 
+Config.state = [
+  'PD',
+];
+
+Config.lang = {
+  list: [
+    'C++'
+  ],
+  ext: {
+    'C++': 'cpp'
+  }
+};
+
 module.exports = Config;

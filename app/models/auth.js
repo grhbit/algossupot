@@ -117,7 +117,11 @@ module.exports = function (sequelize, DataTypes) {
       type: DataTypes.STRING,
       validate: {is: ['^[a-z0-9_\\-]{3,32}$']}
     },
-    password: DataTypes.STRING
+    password: DataTypes.STRING,
+    isAdmin: {
+      type: DataTypes.BOOLEAN,
+      defaultValud: false
+    }
   }, {
     associate: function (models) {
       Auth.belongsTo(models.User);

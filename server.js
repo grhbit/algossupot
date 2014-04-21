@@ -2,14 +2,14 @@
 /*global alog*/
 'use strict';
 
+var config = global.config = require('./config');
 var express = require('express');
 var RedisStore = require('connect-redis')(express);
 var routes = require('./config/routes');
 var http = require('http');
 var path = require('path');
-var async = require('async');
+var async = global.async = require('async');
 var winston = require('winston');
-var config = require('./config');
 var models = require('./app/models');
 
 var DBLib = require('mysql-activerecord');
@@ -20,9 +20,7 @@ var db = new DBLib.Adapter({
   database: 'algossupot'
 });
 
-global.config = config;
 global.db = db;
-global.async = async;
 
 winston.addColors(winston.config.syslog.colors);
 

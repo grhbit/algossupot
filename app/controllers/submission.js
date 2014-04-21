@@ -27,17 +27,22 @@ Controller.load = function (req, res, next) {
         return next(err);
       });
   } else {
-    //@TODO: 필요한 파라메터가 없는 경우
     return next('wrong request');
   }
 };
 
-Controller.loadSourceCode = function (req, res, next) {
+Controller.loadWithSourceCode = function (req, res, next) {
   if (req.params && req.params.submission_id) {
     var id = req.params.submission_id;
 
     Submission.find({where: {'id': id}})
       .success(function (submission) {
+        if (!submission) {
+          return next('not found submission');
+        }
+
+        req.models = req.models || {};
+        req.models.submission = submission;
         submission.loadSourceCode(function (err, sourceCode) {
           req.models.submission.sourceCode = sourceCode;
           if (err) {

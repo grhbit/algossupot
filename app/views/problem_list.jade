@@ -6,7 +6,8 @@ block content
   br
   br
 
-  h4 황규백 교수님 과제
   ul
-    li 
-      a(href='/problems/1') 미로 찾기
+    if problems
+        each problem in problems
+            li
+              a(href='/problems/' + problem.id)= problem.name
