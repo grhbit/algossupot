@@ -11,8 +11,7 @@ module.exports = function (sequelize, DataTypes) {
       validate: {is: ['^[a-z0-9_\\-]{3,32}$', 'i']}
     },
     email: {
-      type: DataTypes.STRING,
-      validate: {is: ['^([a-z0-9_\\.\\-]+)@([\\da-z\\.\\-]+)\\.([a-z\\.]{2,6})$']}
+      type: DataTypes.STRING
     }
   }, {
     associate: function (models) {

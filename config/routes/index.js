@@ -27,12 +27,17 @@ var index = function (req, res) {
 
 // For tests.
 var routes = {
+
   index: function (req, res) {
+
     if (req.session && req.session.user) {
       async.waterfall([
         function (cb) {
           Submission.findAll({
-            include: [User, Problem]
+            include: [{
+              model: User,
+              where: {id: req.session.user.id}
+            }, Problem]
           }).success(function (submissions) {
             cb(null, submissions);
           }).error(function (err) {
@@ -42,7 +47,6 @@ var routes = {
         function (results, cb) {
           var submitted = [];
           async.each(results, function (result, next) {
-            alog.info(require('util').inspect(result.values));
             submitted.push({
               num: result.problem.id,
               title: result.problem.name,
@@ -57,7 +61,7 @@ var routes = {
       ], function (err, submitted) {
         res.render('user_dashboard', {
           user: req.session.user,
-          rows: submitted,
+          rows: submitted || [],
           is_signed_in: true
         });
       });
@@ -121,7 +125,9 @@ var routes = {
                 .success(function (submission) {
                   user.addSubmission(submission).success(function () {
                     problem.addSubmission(submission).complete(function (err) {
-                      res.redirect('/');
+                      submission.saveSourceCode(src, function (err) {
+                        res.redirect('/');
+                      });
                     });
 
                   });

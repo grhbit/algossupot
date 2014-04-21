@@ -12,12 +12,13 @@ block content
           th(style='width: 15%; font-size:16px') 상태
           th(style='width: 15%; font-size:16px') 코드 보기
       tbody
-        each item in rows
-          tr
-            td
-              a(href='/problems/' + item.num)= item.num
-            td
-              a(href='/problems/' + item.num)= item.title
-            td= item.status
-            td
-              a(href='#')= item.code
+        if rows
+          each item in rows
+            tr
+              td
+                a(href='/problems/' + item.num)= item.num
+              td
+                a(href='/problems/' + item.num)= item.title
+              td= item.status
+              td
+                a(href='#')= item.code
