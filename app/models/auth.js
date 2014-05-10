@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global alog, async, db*/
+/*global winston, async, db*/
 'use strict';
 
 var table_name = 'auth';

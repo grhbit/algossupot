@@ -1,12 +1,53 @@
 /*jslint node: true, eqeq: true */
-/*global alog, async, config, db*/
+/*global winston, async, config, db*/
 'use strict';
 var fs = require('fs');
 var path = require('path');
 var util = require('util');
 var mkdirp = require('mkdirp');
+var Judge = require('../../judge');
 
 var _Submission, ClassMethods = {}, InstanceMethods = {};
+
+InstanceMethods.getSourceCodePath = function (callback) {
+  var self = this,
+    getUser = function (cb) {
+      self.getUser()
+        .success(function (user) {
+          if (user) {
+            return cb(null, user);
+          }
+          return cb('not found user');
+        })
+        .error(function (err) {
+          return cb(err);
+        });
+    },
+    getProblem = function (cb) {
+      self.getProblem()
+        .success(function (problem) {
+          if (problem) {
+            return cb(null, problem);
+          }
+          return cb('not found problem');
+        })
+        .error(function (err) {
+          return cb(err);
+        });
+    };
+
+  async.series({
+    user: getUser,
+    problem: getProblem
+  }, function (err, results) {
+    if (err) {
+      return callback(err);
+    }
+
+    return callback(null, path.join(config.dir.submission, results.user.id.toString(), results.problem.id.toString()));
+  });
+
+};
 
 InstanceMethods.loadSourceCode = function (callback) {
   var self = this,
@@ -115,15 +156,52 @@ InstanceMethods.saveSourceCode = function (src, callback) {
   });
 };
 
+InstanceMethods.updateState = function (state, callback) {
+  var self = this, iState = 0;
+
+  if (typeof state === 'string') {
+    iState = config.state.indexOf(state);
+  } else if (typeof state === 'number') {
+    iState = state;
+  }
+
+  if (iState === -1) {
+    return callback('submission invalid state');
+  }
+
+  self.state = iState;
+  self.save(['state'])
+    .success(function () {
+      return callback(null, self);
+    }).error(function (err) {
+      return callback(err);
+    });
+};
+
+InstanceMethods.judge = function (callback) {
+  var self = this,
+    judgeStream = new Judge(self);
+
+  judgeStream
+    .on('state', function (state) {
+      self.updateState(state, function (err, submission) {
+        return undefined;
+      });
+    })
+    .on('exit', function (code) {
+      callback(null, code);
+    });
+};
+
 module.exports = function (sequelize, DataTypes) {
   var Submission = sequelize.define('Submission', {
     state: {
       type: DataTypes.INTEGER,
-      defaultValue: config.state.indexOf('PD')
+      defaultValue: config.state.indexOf('Pending')
     },
     lang: {
       type: DataTypes.STRING,
-      defaultValue: 'C++', //　테스트용
+      defaultValue: 'C++',
       isIn: [config.lang.list],
     }
   }, {

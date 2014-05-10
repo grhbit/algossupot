@@ -6,18 +6,22 @@
     "start": "node server.js"
   },
   "dependencies": {
-    "express": "3.4.8",
-    "jade": "*",
+    "express": "~4.0.0",
+    "morgan": "~1.0.0",
+    "body-parser": "~1.0.1",
+    "method-override": "~1.0.0",
+    "cookie-parser": "~1.0.0",
+    "express-session": "~1.0.0",
+    "connect-redis": "~2.0.0",
+
     "async": "*",
+    "crypto": "*",
     "hashish": "*",
     "lodash": "*",
-    "winston": "*",
+    "mariasql": "~0.1.20",
     "marked": "*",
-    "connect-redis": "1.4.7",
-    "mysql-activerecord": "*",
-    "crypto": "*",
     "mkdirp": "*",
     "sequelize": "~1.7.2",
-    "mariasql": "~0.1.20"
+    "winston": "*"
   }
 }

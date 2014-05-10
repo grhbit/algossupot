@@ -115,11 +115,6 @@ class MiniSandbox(SandboxPolicy, Sandbox):
         action.type, action.data = S_ACTION_KILL, S_RESULT_RF
         return action
 
-class CompileModule:
-    def __init__(self):
-
-    def compile(self):
-
 def main(args):
     # sandbox에서 처리를 해주겠지만 Root 권한으로 이 스크립트가 실행되는 것을 막는다.
     isRoot = os.getuid() == 0

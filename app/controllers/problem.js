@@ -1,14 +1,19 @@
 /*jslint node: true, eqeq: true */
-/*global alog, async*/
+/*global winston, async*/
 'use strict';
-var Problem = require('../models').Problem;
-var Submission = require('../models').Submission;
-var User = require('../models').User;
+
+var Models = require('../models');
+var Problem = Models.Problem;
+var Submission = Models.Submission;
+var User = Models.User;
 var marked = require('marked');
 
 function Controller() {
   return undefined;
 }
+
+Controller.params = function (req, res, next, problem) {
+};
 
 // 문제 데이터를 읽어 req 변수에 추가합니다.
 Controller.load = function (req, res, next) {
@@ -61,20 +66,21 @@ Controller.recvSubmit = function (req, res) {
           });
         })
         .error(function (err) {
-          alog.error(err);
+          winston.error(err);
           res.redirect('/');
         });
 
     }).error(function (err) {
-      alog.error(err);
+      winston.error(err);
       res.redirect('/');
     });
   }).error(function (err) {
-    alog.error(err);
+    winston.error(err);
     res.redirect('/');
   });
 };
 
+// Rendering
 Controller.renderProblemPage = function (req, res) {
   if (req.models.problem) {
     var problem = req.models.problem,
@@ -104,5 +110,6 @@ Controller.renderProblemList = function (req, res) {
       return res.redirect('/');
     });
 };
+//
 
 module.exports = Controller;

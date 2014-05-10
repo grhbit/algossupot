@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global alog, async, config*/
+/*global winston, async, config*/
 'use strict';
 var models = require('../models');
 var Submission = models.Submission;

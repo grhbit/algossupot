@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global alog, async, db*/
+/*global winston, async, db*/
 'use strict';
 var Auth = require('../../app/models').Auth;
 var User = require('../../app/models').User;
@@ -11,6 +11,7 @@ var ProblemController = require('../../app/controllers/problem');
 var SubmissionController = require('../../app/controllers/submission');
 
 var marked = require('marked');
+
 marked.setOptions({
   renderer: new marked.Renderer(),
   gfm: true,
@@ -70,79 +71,33 @@ var routes = {
     } else {
       res.render('default_template', { is_signed_in: false });
     }
-  },
-  users: {
-    index: {
-      get: function (req, res) {
-        res.end();
-      },
-      post: function (req, res) {
-        res.end();
-      }
-    },
-  },
-  problems: {
-    id: {
-      submit: {
-        post: function (req, res) {
-          var src = req.body['source-code-form'];
-
-          alog.info(req.session.user);
-          User.find(req.session.user.id).success(function (user) {
-            if (!user) {
-              return res.redirect('/');
-            }
-
-            alog.info(user);
-
-            Problem.find(req.params.problemid).success(function (problem) {
-              if (!problem) {
-                return res.redirect('/');
-              }
-
-              Submission.create({state: 0})
-                .success(function (submission) {
-                  user.addSubmission(submission).success(function () {
-                    problem.addSubmission(submission).complete(function (err) {
-                      submission.saveSourceCode(src, function (err) {
-                        res.redirect('/');
-                      });
-                    });
-
-                  });
-                })
-                .error(function (err) {
-                  alog.error(err);
-                  res.redirect('/');
-                });
-
-            }).error(function (err) {
-              alog.error(err);
-              res.redirect('/');
-            });
-          }).error(function (err) {
-            alog.error(err);
-            res.redirect('/');
-          });
-        }
-      }
-    }
   }
 };
 
 exports.use = function (app) {
   app.all('/', routes.index);
 
-  app.get('/users', routes.users.index.get);
-  app.post('/users', routes.users.index.post);
+  app.get('/users', UserController.all, function (req, res) {
+    res.render('user/list', {users: req.models.users});
+  });
 
   app.get('/problems', ProblemController.renderProblemList);
   app.get('/problems/:problemid', ProblemController.load, ProblemController.renderProblemPage);
   app.post('/problems/:problemid/submit', AuthController.requireAuthentication, ProblemController.recvSubmit);
 
   app.get('/submission/:submission_id/view-source', SubmissionController.loadWithSourceCode, function (req, res) {
-    res.header("Content-Type", "application/json; charset=utf-8");
-    res.end(req.models.submission.sourceCode);
+    res.render('submission/view_source', {
+      is_signed_in: req.session.user != null,
+      markedSource: marked('```\n' + String(req.models.submission.sourceCode) + '```')
+    });
+  });
+
+  app.get('/submission/:submission_id/view-source/raw', SubmissionController.loadWithSourceCode, function (req, res) {
+    res.header("Content-Type", "text/plain; charset=utf-8");
+    res.render('submission/view_source', {
+      is_signed_in: req.session.user != null,
+      markedSource: String(req.models.submission.sourceCode)
+    });
   });
 
   app.get('/admin/problem', function (req, res) {

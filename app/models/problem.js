@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global async, alog, config, db*/
+/*global async, winston, config, db*/
 'use strict';
 var path = require('path'),
   fs = require('fs'),

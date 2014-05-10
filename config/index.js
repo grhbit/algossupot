@@ -22,8 +22,22 @@ Config.db = {
   }
 };
 
+Config.judge = {
+  script: path.join(rootDirectory, './judge/index.py')
+};
+
 Config.state = [
-  'PD',
+  'Pending',
+  'Accepted',
+  'Wrong Answer',
+  'Compiling',
+  'Compile Error',
+  'Memory Limit Exceed',
+  'Output Limit Exceed',
+  'Time Limit Exceed',
+  'Runtime Error',
+  'Abnormal Terminated',
+  'Internal Error'
 ];
 
 Config.lang = {

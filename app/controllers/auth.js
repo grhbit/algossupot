@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true */
-/*global alog*/
+/*global winston*/
 'use strict';
 var Auth = require('../models').Auth;
 
@@ -31,7 +31,7 @@ Controller.signIn = function (req, res) {
 
   Auth.signIn(userid, password, function (err, auth) {
     if (err) {
-      alog.error(err);
+      winston.error(err);
       return res.redirect('/');
     }
 
@@ -58,8 +58,8 @@ Controller.signUp_recvData = function (req, res) {
 
   Auth.signUp(userid, password, function (err, auth) {
     if (err) {
-      alog.error('signup fail!');
-      alog.error(err);
+      winston.error('signup fail!');
+      winston.error(err);
       res.redirect('/');
     } else {
       res.redirect('/');
