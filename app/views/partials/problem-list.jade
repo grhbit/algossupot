@@ -1,0 +1,8 @@
+div.problems
+  h2 문제 리스트
+  br
+  br
+
+  ul
+    li(ng-repeat='problem in problems')
+      a(href='/problems/{{problem.id}}') {{problem.name}}

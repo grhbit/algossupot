@@ -3,9 +3,18 @@
 'use strict';
 
 /**
- * Module dependencies
+ * Module dependencies & Global Variable Setup
  */
 var config = global.config = require('./config');
+var path = require('path');
+var winston = global.winston = require('winston');
+winston.setLevels(winston.config.syslog.levels);
+
+var models = global.models = require('./app/models');
+var async = global.async = require('async');
+var routes = require('./routes');
+var api = routes.api;
+var routes_ = require('./config/routes');
 
 var express = require('express');
 var morgan = require('morgan');
@@ -15,22 +24,6 @@ var cookieParser = require('cookie-parser');
 var session = require('express-session');
 var RedisStore = require('connect-redis')(session);
 var app = express();
-
-var async = require('async');
-var routes = require('./config/routes');
-var path = require('path');
-var models = require('./app/models');
-var winston = require('winston');
-
-/**
- * Global Variable Setup
- */
-
-global.async = async;
-global.config = config;
-global.models = models;
-global.winston = winston;
-winston.setLevels(winston.config.syslog.levels);
 
 
 /**
@@ -59,9 +52,74 @@ app.set('view engine', 'jade');
  */
 
 var router = express.Router();
+
+router.route('/auths/join')
+  .post(api.auth.join);
+
+router.route('/auths/login')
+  .get(api.auth.login);
+
+router.route('/users')
+  .get(api.user.list)
+  .post(api.user.create);
+
+router.route('/user/:id')
+  .get(api.user.show)
+  .put(api.user.update)
+  .delete(api.user.destroy);
+
+router.route('/problems')
+  .get(api.problem.list)
+  .post(api.problem.create);
+
+router.route('/problem/:id')
+  .get(api.problem.show)
+  .put(api.problem.update)
+  .delete(api.problem.destroy);
+
+router.route('/submissions')
+  .get(api.submission.list)
+  .post(api.submission.create);
+
+router.route('/submission/:id')
+  .get(api.submission.show)
+  .put(api.submission.update)
+  .delete(api.submission.destroy);
+
 app.use('/api', router);
 
-routes.use(app);
+app.route('/')
+  .get(routes.index);
+
+app.route('/auths/join')
+  .get(routes.auth.join);
+
+app.route('/auths/login')
+  .get(routes.auth.login);
+
+app.route('/users/list')
+  .get(routes.user.list);
+
+app.route('/users/show')
+  .get(routes.user.show);
+
+app.route('/problems/list')
+  .get(routes.problem.list);
+
+app.route('/problems/show')
+  .get(routes.problem.show);
+
+app.route('/submissions/list')
+  .get(routes.submission.list);
+
+app.route('/submissions/show')
+  .get(routes.submission.show);
+
+app.route('*')
+  .all(routes.index);
+
+//routes_.use(app);
+
 
 /**
  * Start Server

@@ -1,0 +1,21 @@
+h2 회원 가입
+br
+br
+
+div(ng-controller='AuthJoinCtrl')
+  form(role='form')
+    .form-group
+      p 이름:
+      input.form-control(type='text', ng-model='user.name')
+      br
+      p 이메일:
+      input.form-control(type='email', ng-model='user.email')
+      br
+      p 비밀번호:
+      input.form-control(type='password', ng-model='user.password')
+      br
+      p 비밀번호 재확인:
+      input.form-control(type='password', ng-model='user.password_retype')
+      br
+
+    button.btn.btn-primary(ng-click='join()') Submit

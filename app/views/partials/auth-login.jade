@@ -1,0 +1,15 @@
+h2 로그인
+br
+br
+
+div(ng-controller='AuthLoginCtrl')
+  form(role='form')
+    .form-group
+      p 이름:
+      input.form-control(type='text', ng-model='user.name')
+      br
+      p 비밀번호:
+      input.form-control(type='password', ng-model='user.password')
+      br
+
+    button.btn.btn-primary(ng-click='login()') Submit
