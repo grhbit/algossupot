@@ -34,7 +34,8 @@ node_modules
 .LSOverride
 
 # Icon must ends with two \r.
-Icon
+Icon
+
 
 # Thumbnails
 ._*
@@ -143,3 +144,4 @@ sftp-config.json
 [Ii]nclude
 [Ll]ib
 [Ss]cripts
+judge/sandbox/
