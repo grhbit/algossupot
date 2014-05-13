@@ -1,5 +1,5 @@
-/*jslint node: true, eqeq: true */
-/*global winston, async, config, db*/
+/*jslint node: true, eqeq: true, vars: true */
+/*global winston, async, config, models*/
 'use strict';
 var fs = require('fs');
 var path = require('path');
@@ -9,150 +9,105 @@ var Judge = require('../../judge');
 
 var _Submission, ClassMethods = {}, InstanceMethods = {};
 
-InstanceMethods.getSourceCodePath = function (callback) {
-  var self = this,
-    getUser = function (cb) {
-      self.getUser()
-        .success(function (user) {
-          if (user) {
-            return cb(null, user);
-          }
-          return cb('not found user');
-        })
-        .error(function (err) {
-          return cb(err);
-        });
-    },
-    getProblem = function (cb) {
-      self.getProblem()
-        .success(function (problem) {
-          if (problem) {
-            return cb(null, problem);
-          }
-          return cb('not found problem');
-        })
-        .error(function (err) {
-          return cb(err);
+ClassMethods.push = function (submissionMember, userId, problemId, callback) {
+  var User = models.User;
+  var Problem = models.Problem;
+  var findUserById = function (cb) {
+    User.find(userId).
+      success(function (user) {
+        cb(null, user);
+      }).
+      error(function (err) {
+        cb(err);
+      });
+  };
+  var findProblemById = function (cb) {
+    Problem.find(problemId).
+      success(function (problem) {
+        cb(null, problem);
+      }).
+      error(function (err) {
+        cb(err);
+      });
+  };
+  var createSubmission = function (err, results) {
+    var userAddSubmission = function (submission, cb) {
+      results.user.addSubmission(submission).
+        complete(function (err) {
+          cb(err);
         });
     };
+    var problemAddSubmission = function (submission, cb) {
+      results.problem.addSubmission(submission).
+        complete(function (err) {
+          cb(err);
+        });
+    };
+    var saveSourceCode = function (sourceCode, path, cb) {
+      fs.writeFile(path, sourceCode.replace(/(\x0d)/g, ''), function (err) {
+        if (err) {
+          return cb(err);
+        }
+        return cb(null);
+      });
+    };
+    var sourceCode = submissionMember.sourceCode;
 
-  async.series({
-    user: getUser,
-    problem: getProblem
-  }, function (err, results) {
     if (err) {
       return callback(err);
     }
 
-    return callback(null, path.join(config.dir.submission, results.user.id.toString(), results.problem.id.toString()));
-  });
+    _Submission.create({
+      language: submissionMember.language,
+      codeLength: sourceCode.length,
+    }).
+      success(function (submission) {
+        async.waterfall([
+          async.apply(userAddSubmission, submission),
+          async.apply(problemAddSubmission, submission),
+          submission.getSourceCodePath,
+          mkdirp,
+          async.apply(saveSourceCode, sourceCode)
+        ], function (err, result) {
+          if (err) {
+            return callback(err);
+          }
+          return callback(null);
+        });
+      }).
+      error(function (err) {
+        return callback(err);
+      });
+  };
 
+  async.series({
+    user: findUserById,
+    problem: findProblemById
+  }, createSubmission);
+};
+
+InstanceMethods.getSourceCodePath = function (callback) {
+  var self = this;
+  var userSubmissionFolder = path.join(config.dir.submission, self.user.id.toString());
+  var sourceCodeExt = config.lang.ext[self.language];
+
+  return callback(null, path.join(userSubmissionFolder, self.id, sourceCodeExt));
 };
 
 InstanceMethods.loadSourceCode = function (callback) {
-  var self = this,
-    getUser = function (cb) {
-      self.getUser()
-        .success(function (user) {
-          if (user) {
-            return cb(null, user);
-          }
-          return cb('not found user');
-        })
-        .error(function (err) {
-          return cb(err);
-        });
-    },
-    getProblem = function (cb) {
-      self.getProblem()
-        .success(function (problem) {
-          if (problem) {
-            return cb(null, problem);
-          }
-          return cb('not found problem');
-        })
-        .error(function (err) {
-          return cb(err);
-        });
-    },
-    getSourceCodePath = function (problem_id, user_id, cb) {
-      return path.join(config.dir.submission, user_id.toString(), problem_id.toString());
-    };
+  var self = this;
 
-  async.series({
-    user: getUser,
-    problem: getProblem
-  }, function (err, results) {
-    if (err) {
-      return callback(err);
-    }
-
-    var sourceCodeExt = '.' + (config.lang.ext[self.lang] || ''),
-      sourceCodeDir = getSourceCodePath(results.problem.id, results.user.id),
-      sourceCodePath = path.join(sourceCodeDir, self.id.toString());
+  self.getSourceCodePath(function (err, path) {
     async.waterfall([
-      async.apply(fs.readFile, sourceCodePath + sourceCodeExt)
+      self.getSourceCodePath,
+      fs.readFile
     ], function (err, data) {
       if (err) {
         return callback(err);
       }
       return callback(null, data);
     });
-  });
-};
 
-InstanceMethods.saveSourceCode = function (src, callback) {
-  var self = this,
-    getUser = function (cb) {
-      self.getUser()
-        .success(function (user) {
-          if (user) {
-            return cb(null, user);
-          }
-          return cb('not found user');
-        })
-        .error(function (err) {
-          return cb(err);
-        });
-    },
-    getProblem = function (cb) {
-      self.getProblem()
-        .success(function (problem) {
-          if (problem) {
-            return cb(null, problem);
-          }
-          return cb('not found problem');
-        })
-        .error(function (err) {
-          return cb(err);
-        });
-    },
-    getSourceCodePath = function (problem_id, user_id) {
-      return path.join(config.dir.submission, user_id.toString(), problem_id.toString());
-    };
-
-  async.series({
-    user: getUser,
-    problem: getProblem
-  }, function (err, results) {
-    if (err) {
-      return callback(err);
-    }
-
-    // Dos2Unix
-    src = src.replace(/(\x0d)/g, "");
-    var sourceCodeExt = '.' + (config.lang.ext[self.lang] || ''),
-      sourceCodeDir = getSourceCodePath(results.problem.id, results.user.id),
-      sourceCodePath = path.join(sourceCodeDir, self.id.toString());
-    async.waterfall([
-      async.apply(mkdirp, sourceCodeDir),
-      async.apply(fs.writeFile, sourceCodePath + sourceCodeExt, src, {encoding: 'utf-8'})
-    ], function (err) {
-      if (err) {
-        return callback(err);
-      }
-      return callback();
-    });
   });
 };
 
@@ -166,7 +121,7 @@ InstanceMethods.updateState = function (state, callback) {
   }
 
   if (iState === -1) {
-    return callback('submission invalid state');
+    return callback(new Error('submission invalid state'));
   }
 
   self.state = iState;
@@ -195,14 +150,24 @@ InstanceMethods.judge = function (callback) {
 
 module.exports = function (sequelize, DataTypes) {
   var Submission = sequelize.define('Submission', {
+    language: {
+      type: DataTypes.STRING,
+      notNull: true,
+      isIn: [config.lang.list]
+    },
+    codeLength: {
+      type: DataTypes.INTEGER,
+      notNull: true,
+      min: 0
+    },
     state: {
       type: DataTypes.INTEGER,
+      notNull: true,
       defaultValue: config.state.indexOf('Pending')
     },
-    lang: {
-      type: DataTypes.STRING,
-      defaultValue: 'C++',
-      isIn: [config.lang.list],
+    executionTime: {
+      type: DataTypes.INTEGER,
+      min: 0
     }
   }, {
     associate: function (models) {

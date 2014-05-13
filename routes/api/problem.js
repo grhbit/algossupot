@@ -66,10 +66,10 @@ var loadContents = function (problem, callback) {
 exports.list = function (req, res) {
   Problem.all()
     .success(function (problems) {
-      res.json({ status: 200, problems: problems });
+      res.json(problems);
     })
     .error(function (err) {
-      res.json({ status: 500, message: err.toString() });
+      res.json(500, { error: err.toString() });
     });
 };
 
@@ -83,11 +83,11 @@ exports.show = function (req, res) {
   findById(id, function (err, problem) {
     loadContents(problem, function (err, contents) {
       if (err) {
-        return res.json({ status: 500, message: err.toString() });
+        return res.json(500, { error: err.toString() });
       }
 
       contents.problem_content = marked(String(contents.problem_content));
-      return res.json({ status: 200, problem: problem, contents: contents });
+      return res.json({ problem: problem, contents: contents });
     });
   });
 };
@@ -105,10 +105,10 @@ exports.update = function (req, res) {
     async.apply(updateProblem, data)
   ], function (err) {
     if (err) {
-      return res.json({ status: 500, message: err.toString() });
+      return res.json(500, { error: err.toString() });
     }
 
-    res.json({ status: 200 });
+    res.json({});
   });
 };
 
@@ -120,9 +120,9 @@ exports.destroy = function (req, res) {
     destroyProblem
   ], function (err) {
     if (err) {
-      return res.json({ status: 500, message: err.toString() });
+      return res.json(500, { error: err.toString() });
     }
 
-    return res.json({ status: 200 });
+    return res.json({});
   });
 };

@@ -6,23 +6,10 @@ var _User, ClassMethods = {};
 
 module.exports = function (sequelize, DataTypes) {
   var User = sequelize.define('User', {
-    name: {
-      type: DataTypes.STRING(32),
-      allowNull: false,
-      validate: {
-        is: ['^[a-z0-9_\\-]{3,32}$', 'i'],
-        not: ['^[0-9]*$']
-      }
-    },
-    /*
     nickname: {
       type: DataTypes.STRING(16),
-      allowNull: false,
-      validate: {is: ['^[a-z0-9_\\-ㄱ-ㅎㅏ-ㅣ가-힣]$', 'i']}
-    },
-    */
-    email: {
-      type: DataTypes.STRING
+      notNull: true,
+      validate: {is: ['^[a-z0-9_\\-ㄱ-ㅎㅏ-ㅣ가-힣]+$', 'i'], len: [2, 16]}
     }
   }, {
     associate: function (models) {

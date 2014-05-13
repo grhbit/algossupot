@@ -5,25 +5,40 @@
 var Auth = models.Auth;
 
 exports.join = function (req, res, next) {
-  var username = req.body.username;
-  var password = req.body.password;
-  Auth.signUp(username, password, function (err, auth) {
+  var signUpForm = {
+    username: req.body.username,
+    nickname: req.body.nickname,
+    password: req.body.password,
+    email: req.body.email
+  };
+  Auth.signUp(signUpForm, function (err, auth) {
     if (err) {
-      console.error(err);
-      return res.json({ status: 500, message: err.toString() });
+      return res.json(500, { error: err.toString() });
     }
-    return res.json({ status: 200 });
+
+    auth.password = undefined;
+    delete auth.password;
+    return res.json(auth);
   });
 };
 
 exports.login = function (req, res, next) {
-  var username = req.body.username;
-  var password = req.body.password;
+  var signInForm = {
+    username: req.body.username,
+    password: req.body.password
+  };
 
-  Auth.signIn(username, password, function (err, auth) {
+  Auth.signIn(signInForm, function (err, auth) {
     if (err) {
-      return res.json({ status: 500 });
+      return res.json(500, { error: err.toString() });
     }
-    return res.json({ status: 200 });
+
+    auth.password = undefined;
+    delete auth.password;
+    return res.json(auth);
   });
+};
+
+exports.resign = function (req, res, next) {
+
 };

@@ -5,8 +5,11 @@ br
 div(ng-controller='AuthJoinCtrl')
   form(role='form')
     .form-group
-      p 이름:
+      p 아이디:
       input.form-control(type='text', ng-model='user.name')
+      br
+      p 닉네임:
+      input.form-control(type='text', ng-model='user.nickname')
       br
       p 이메일:
       input.form-control(type='email', ng-model='user.email')

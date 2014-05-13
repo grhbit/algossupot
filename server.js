@@ -14,7 +14,6 @@ var models = global.models = require('./app/models');
 var async = global.async = require('async');
 var routes = require('./routes');
 var api = routes.api;
-var routes_ = require('./config/routes');
 
 var express = require('express');
 var morgan = require('morgan');
@@ -57,7 +56,7 @@ router.route('/auths/join')
   .post(api.auth.join);
 
 router.route('/auths/login')
-  .get(api.auth.login);
+  .post(api.auth.login);
 
 router.route('/users')
   .get(api.user.list)
@@ -85,6 +84,11 @@ router.route('/submission/:id')
   .get(api.submission.show)
   .put(api.submission.update)
   .delete(api.submission.destroy);
+
+router.route('*')
+  .all(function (req, res) {
+    res.send(400, { error: 'Bad Request' });
+  });
 
 app.use('/api', router);
 
@@ -118,16 +122,13 @@ app.route('/submissions/show')
 app.route('*')
   .all(routes.index);
 
-//routes_.use(app);
-
-
 /**
  * Start Server
  */
 
 models
   .sequelize
-  .sync()
+  .sync({force: false})
   .complete(function (err) {
     if (err) {
       throw err;

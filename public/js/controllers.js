@@ -1,3 +1,4 @@
+/*jslint browser:true*/
 /*global angular */
 'use strict';
 
@@ -17,21 +18,30 @@ angular.module('myApp.controllers', []).
         });
 
     }]).
-  controller('AuthJoinCtrl', ['$scope', '$rootScope', '$http', '$routeParams',
-    function ($scope, $rootScope, $http, $routeParams) {
+  controller('AuthJoinCtrl', ['$scope', '$rootScope', '$http', '$window', '$routeParams',
+    function ($scope, $rootScope, $http, $window, $routeParams) {
+      if ($rootScope.me) {
+        $window.history.back();
+      }
 
       $scope.join = function () {
         $http.post('/api/auths/join', {
           username: $scope.user.name,
+          nickname: $scope.user.nickname,
+          email: $scope.user.email,
           password: $scope.user.password
         }).
           success(function (data) {
-            $rootScope.me = data.user;
+            $rootScope.me = data.me;
+            $window.history.back();
           });
       };
     }]).
-  controller('AuthLoginCtrl', ['$scope', '$rootScope', '$http', '$routeParams',
-    function ($scope, $rootScope, $http, $routeParams) {
+  controller('AuthLoginCtrl', ['$scope', '$rootScope', '$http', '$window', '$routeParams',
+    function ($scope, $rootScope, $http, $window, $routeParams) {
+      if ($rootScope.me) {
+        $window.history.back();
+      }
 
       $scope.login = function () {
         $http.post('/api/auths/login', {
@@ -39,7 +49,10 @@ angular.module('myApp.controllers', []).
           password: $scope.user.password
         }).
           success(function (data) {
-            $rootScope.me = data.user;
+            $rootScope.me = data.me;
+            $window.history.back();
+          }).
+          error(function (data, status) {
           });
       };
     }]).
@@ -59,11 +72,11 @@ angular.module('myApp.controllers', []).
           $scope.user = data.user;
         });
     }]).
-  controller('ProblemListCtrl', ['$scope', '$http',
-    function ($scope, $http) {
+  controller('ProblemListCtrl', ['$scope', '$rootScope', '$http',
+    function ($scope, $rootScope, $http) {
       $http.get('/api/problems').
         success(function (data) {
-          $scope.problems = data.problems;
+          $rootScope.problems = data.problems;
         });
     }]).
   controller('ProblemShowCtrl', ['$scope', '$http', '$routeParams', '$sce',

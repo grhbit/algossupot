@@ -41,10 +41,10 @@ var destroyUser = function (user, callback) {
 exports.list = function (req, res) {
   User.all()
     .success(function (users) {
-      res.json({ status: 200, users: users});
+      res.json(users);
     })
     .error(function (err) {
-      res.json({ status: 500, message: err.toString() });
+      res.send(500, { error: err.toString() });
     });
 };
 
@@ -57,10 +57,10 @@ exports.show = function (req, res) {
 
   findById(id, function (err, user) {
     if (err) {
-      return res.json({ status: 500, message: err.toString() });
+      return res.json(500, { error: err.toString() });
     }
 
-    res.json({ status: 200, user: user });
+    res.json(200, user);
   });
 };
 
@@ -77,10 +77,10 @@ exports.update = function (req, res) {
     async.apply(updateUser, data)
   ], function (err) {
     if (err) {
-      return res.json({ status: 500, message: err.toString() });
+      return res.send(500, { error: err.toString() });
     }
 
-    res.json({ status: 200 });
+    res.json({});
   });
 };
 
@@ -92,9 +92,9 @@ exports.destroy = function (req, res) {
     destroyUser
   ], function (err) {
     if (err) {
-      return res.json({ status: 500, message: err.toString() });
+      return res.json(500, { error: err.toString() });
     }
 
-    return res.json({ status: 200 });
+    return res.json({});
   });
 };

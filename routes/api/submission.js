@@ -41,10 +41,10 @@ var destroySubmission = function (submission, callback) {
 exports.list = function (req, res) {
   Submission.all()
     .success(function (submissions) {
-      res.json({ status: 200, submissions: submissions});
+      res.json(submissions);
     })
     .error(function (err) {
-      res.json({ status: 500, message: err.toString() });
+      res.json(500, { error: err.toString() });
     });
 };
 
@@ -57,10 +57,10 @@ exports.show = function (req, res) {
 
   findById(id, function (err, submission) {
     if (err) {
-      return res.json({ status: 500, message: err.toString() });
+      return res.json(500, { error: err.toString() });
     }
 
-    res.json({ status: 200, submission: submission });
+    res.json(submission);
   });
 };
 
@@ -77,10 +77,10 @@ exports.update = function (req, res) {
     async.apply(updateSubmission, data)
   ], function (err) {
     if (err) {
-      return res.json({ status: 500, message: err.toString() });
+      return res.json({ error: err.toString() });
     }
 
-    res.json({ status: 200 });
+    res.json({});
   });
 };
 
@@ -92,9 +92,9 @@ exports.destroy = function (req, res) {
     destroySubmission
   ], function (err) {
     if (err) {
-      return res.json({ status: 500, message: err.toString() });
+      return res.json(500, { error: err.toString() });
     }
 
-    return res.json({ status: 200 });
+    return res.json({});
   });
 };

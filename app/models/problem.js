@@ -55,9 +55,6 @@ InstanceMethods.loadContents = function (callback) {
         return callback(err);
       }
 
-      metadata.id = self.id;
-      metadata.name = self.name;
-      metadata.slug = self.slug;
       return callback(null, metadata);
     });
 };
@@ -65,8 +62,8 @@ InstanceMethods.loadContents = function (callback) {
 module.exports = function (sequelize, DataTypes) {
   var Problem = sequelize.define('Problem', {
     slug: {
-      type: DataTypes.STRING,
-      validate: { is: ['[[a-z\\-]', 'i'] }
+      type: DataTypes.STRING(32),
+      validate: { is: ['^[a-z\\-]+$', 'i'], len: [4, 32] }
     },
     name: {
       type: DataTypes.STRING(32),
