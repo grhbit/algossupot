@@ -1,12 +1,13 @@
 {
   "contents": {
     "description": "marked-string",
-    "input": "marked-string",
-    "output": "marked-string",
+    "input": "input.txt",
+    "output": "output.txt",
     "sampleInput": "marked-string",
     "sampleOutput": "marked-string",
     "note": "marked-string",
-    "timeLimit": 0,
-    "memoryLimit": 0
+    "timeLimit": 1000,
+    "memoryLimit": 88388608,
+    "diskLimit": 1048576
   }
 }
