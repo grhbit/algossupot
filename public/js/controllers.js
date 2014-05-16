@@ -9,16 +9,12 @@ angular.module('myApp.controllers', []).
     function ($scope, $rootScope, $http, $window, me) {
       $http.get('/api/users').
         success(function (data) {
-          $rootScope.$apply(function () {
-            $rootScope.users = data;
-          });
+          $rootScope.users = data;
         });
 
       $http.get('/api/problems').
         success(function (data) {
-          $rootScope.$apply(function () {
-            $rootScope.problems = data;
-          });
+          $rootScope.problems = data;
         });
 
       $scope.signOut = function () {
@@ -128,14 +124,16 @@ angular.module('myApp.controllers', []).
       $http.get('/api/problem/' + problemId).
         success(function (data) {
           $scope.problem = data.problem;
-          $scope.problemContents = $sce.trustAsHtml(data.contents.problem_content);
+          $scope.trustDescription = $sce.trustAsHtml(data.contents.description);
         });
     }]).
   controller('ProblemCreateCtrl', ['$scope', '$http', '$window',
     function ($scope, $http, $window) {
 
       $scope.submit = function () {
-        $http.post('/api/problems', $scope.problem).
+        $http.post('/api/problems', {
+          problem: $scope.problem
+        }).
           success(function (data) {
             $window.history.back();
           }).
@@ -162,6 +160,7 @@ angular.module('myApp.controllers', []).
     }]).
   controller('SubmissionCreateCtrl', ['$scope', '$http', '$routeParams',
     function ($scope, $http, $routeParams) {
+      $("body").animate({scrollTop: 0}, "slow");
       $scope.submit = function () {
         var data = {
           problemId: $routeParams.id,

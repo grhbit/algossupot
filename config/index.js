@@ -6,6 +6,7 @@ var Config = { };
 Config.dir = {
   root: rootDirectory,
   storage: path.join(rootDirectory, './storage'),
+  problem: path.join(rootDirectory, './storage', './problem'),
   submission: path.join(rootDirectory, './storage', './submission'),
   app: path.join(rootDirectory, './app'),
   controller: path.join(rootDirectory, './app/controllers'),

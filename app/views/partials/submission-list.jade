@@ -1,19 +1,21 @@
-h2 제출 리스트
 br
 br
 
-table.table.table-hover
-  thead
-    tr
-      th id
-      th 상태
-      th 유저
-      th 문제
-  tbody(ng-repeat='submission in submissions')
-    tr
-      td {{submission.id}}
-      td {{submission.state | submitState}}
-      td
-        a(href='/users/{{submission.UserId}}') {{(submission.UserId | loadUser).name}}
-      td
-        a(href='/problems/{{submission.ProblemId}}') {{(submission.ProblemId | loadProblem).name}}
+.panel.panel-default
+  .panel-heading 제출 테이블
+  table.table.table-hover
+    thead
+      tr.row
+        th.col-sm-1 #
+        th.col-sm-3 상태
+        th.col-sm-4 닉네임
+        th.col-sm-4 문제
+    tbody(ng-repeat='submission in submissions')
+      tr
+        td {{submission.id}}
+        td {{submission.state | submitState}}
+        td
+          a(ng-href='/user/{{submission.UserId}}') {{(submission.UserId | loadUser).name}}
+        td
+          a(ng-href='/problem/{{submission.ProblemId}}') {{(submission.ProblemId | loadProblem).name}}
+

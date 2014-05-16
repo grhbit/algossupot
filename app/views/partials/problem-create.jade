@@ -13,13 +13,7 @@ br
         input.form-control(type='text', ng-model='problem.name')
       .form-group
         label(for='') 설명
-        textarea(ng-model='problem.description').form-control
-      .form-group
-        label(for='') 입력 설명
-        textarea(ng-model='problem.inputDescription').form-control
-      .form-group
-        label(for='') 출력 설명
-        textarea(ng-model='problem.outputDescription').form-control
+        textarea(ng-model='problem.description' rows=10).form-control
       .form-group
         label(for='') 시간 제한 (ms)
         input.form-control(type='text', ng-model='problem.timeLimit')

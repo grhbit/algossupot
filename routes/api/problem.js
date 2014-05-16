@@ -86,29 +86,41 @@ exports.show = function (req, res) {
         return res.json(500, err);
       }
 
-      contents.problem_content = marked(String(contents.problem_content));
-      return res.json({ problem: problem, contents: contents });
+      contents.description = marked(String(contents.description));
+      res.json({
+        problem: problem,
+        contents: contents
+      });
     });
   });
 };
 
 exports.create = function (req, res) {
-  var getUser = function (cb) {
-    if (req.session && req.session.user) {
-      return cb(null, req.session.user);
+  var getAuth = function (cb) {
+    console.log(req.session);
+    if (req.session && req.session.auth) {
+      cb(null, req.session.auth);
+    } else {
+      cb(new Error('Not Found Auth'));
     }
-    cb(new Error('Not Authentication'));
   };
-  var pushProblem = function (cb) {
-    Problem.push(req.body, function (err) {
+
+  getAuth(function (err, auth) {
+    if (err) {
+      return res.json(500, err);
+    }
+
+    Problem.push({
+      problem: req.body.problem,
+      userId: auth.UserId
+    }, function (err) {
       if (err) {
+        console.error(require('util').inspect(err));
         return res.json(500, err);
       }
       res.json(200);
     });
-
-  };
-
+  });
 };
 
 exports.update = function (req, res) {
@@ -123,7 +135,7 @@ exports.update = function (req, res) {
       return res.json(500, err);
     }
 
-    res.json({});
+    res.json(200);
   });
 };
 

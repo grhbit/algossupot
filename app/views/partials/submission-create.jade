@@ -2,12 +2,15 @@ br
 br
 div.panel.panel-default
   div.panel-heading 코드 제출
-  div.panel-body
-    select(name='' style='max-width: 20%; min-width: 30px').form-control
-      option(value="cpp") C++
-      option(value="c") C
-
-    form.form-inline(action='', method='POST', role='form')
+  div.panel-body(style='max-width: 30%; min-width: 40px')
+    form(role='form')
       .form-group
-        input.form-control(type='file', placeholder='File')
+        label(for='') 언어
+        select(name='').form-control
+          option(value="cpp") C++
+          option(value="c") C
+      .form-group
+        label(for='') 소스코드
+        input.form-control(type='file' ng-model='file')
+
       button.btn.btn-primary(ng-click='submit()') Submit
