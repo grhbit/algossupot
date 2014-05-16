@@ -69,7 +69,7 @@ exports.list = function (req, res) {
       res.json(problems);
     })
     .error(function (err) {
-      res.json(500, { error: err.toString() });
+      res.json(500, err.toString());
     });
 };
 
@@ -83,7 +83,7 @@ exports.show = function (req, res) {
   findById(id, function (err, problem) {
     loadContents(problem, function (err, contents) {
       if (err) {
-        return res.json(500, { error: err.toString() });
+        return res.json(500, err);
       }
 
       contents.problem_content = marked(String(contents.problem_content));
@@ -93,7 +93,22 @@ exports.show = function (req, res) {
 };
 
 exports.create = function (req, res) {
-  return undefined;
+  var getUser = function (cb) {
+    if (req.session && req.session.user) {
+      return cb(null, req.session.user);
+    }
+    cb(new Error('Not Authentication'));
+  };
+  var pushProblem = function (cb) {
+    Problem.push(req.body, function (err) {
+      if (err) {
+        return res.json(500, err);
+      }
+      res.json(200);
+    });
+
+  };
+
 };
 
 exports.update = function (req, res) {
@@ -105,7 +120,7 @@ exports.update = function (req, res) {
     async.apply(updateProblem, data)
   ], function (err) {
     if (err) {
-      return res.json(500, { error: err.toString() });
+      return res.json(500, err);
     }
 
     res.json({});
@@ -120,7 +135,7 @@ exports.destroy = function (req, res) {
     destroyProblem
   ], function (err) {
     if (err) {
-      return res.json(500, { error: err.toString() });
+      return res.json(500, err.toString());
     }
 
     return res.json({});

@@ -1,5 +1,5 @@
-/*jslint node: true, eqeq: true */
-/*global async, winston, config, db*/
+/*jslint node: true, eqeq: true, vars: true */
+/*global async, winston, config*/
 'use strict';
 var path = require('path'),
   fs = require('fs'),
@@ -7,6 +7,7 @@ var path = require('path'),
   mkdirp = require('mkdirp');
 
 var _Problem, ClassMethods = {}, InstanceMethods = {};
+
 InstanceMethods.loadContents = function (callback) {
   var self = this,
     problemDir = path.join(config.dir.storage, './problems', String(self.id)),
@@ -57,6 +58,11 @@ InstanceMethods.loadContents = function (callback) {
 
       return callback(null, metadata);
     });
+};
+
+ClassMethods.push = function (createForm, callback) {
+  var checkValidate = function (cb) {
+  };
 };
 
 module.exports = function (sequelize, DataTypes) {

@@ -1,26 +1,45 @@
-/*jslint browser:true*/
+/*jslint browser:true, vars: true*/
 /*global angular */
 'use strict';
 
 /* Controllers */
 
 angular.module('myApp.controllers', []).
-  controller('AppCtrl', ['$scope', '$rootScope', '$http',
-    function ($scope, $rootScope, $http) {
+  controller('AppCtrl', ['$scope', '$rootScope', '$http', '$window', 'me',
+    function ($scope, $rootScope, $http, $window, me) {
       $http.get('/api/users').
         success(function (data) {
-          $rootScope.users = data.users;
+          $rootScope.$apply(function () {
+            $rootScope.users = data;
+          });
         });
 
       $http.get('/api/problems').
         success(function (data) {
-          $rootScope.problems = data.problems;
+          $rootScope.$apply(function () {
+            $rootScope.problems = data;
+          });
         });
 
+      $scope.signOut = function () {
+        $http.post('/api/auths/logout').
+          success(function () {
+            me.setUser(null);
+          }).
+          error(function () {
+            me.setUser(null);
+          });
+      };
+
+      $scope.isAuthentication = function () {
+        $scope.me = me.getUser();
+        return me.isAuthentication();
+      };
+
     }]).
-  controller('AuthJoinCtrl', ['$scope', '$rootScope', '$http', '$window', '$routeParams',
-    function ($scope, $rootScope, $http, $window, $routeParams) {
-      if ($rootScope.me) {
+  controller('AuthJoinCtrl', ['$scope', '$rootScope', '$http', '$window', '$routeParams', 'me',
+    function ($scope, $rootScope, $http, $window, $routeParams, me) {
+      if (me.isAuthentication()) {
         $window.history.back();
       }
 
@@ -32,14 +51,14 @@ angular.module('myApp.controllers', []).
           password: $scope.user.password
         }).
           success(function (data) {
-            $rootScope.me = data.me;
+            me.setUser(data);
             $window.history.back();
           });
       };
     }]).
-  controller('AuthLoginCtrl', ['$scope', '$rootScope', '$http', '$window', '$routeParams',
-    function ($scope, $rootScope, $http, $window, $routeParams) {
-      if ($rootScope.me) {
+  controller('AuthLoginCtrl', ['$scope', '$rootScope', '$http', '$window', '$location', 'me',
+    function ($scope, $rootScope, $http, $window, $location, me) {
+      if (me.isAuthentication()) {
         $window.history.back();
       }
 
@@ -49,10 +68,11 @@ angular.module('myApp.controllers', []).
           password: $scope.user.password
         }).
           success(function (data) {
-            $rootScope.me = data.me;
+            me.setUser(data);
             $window.history.back();
           }).
           error(function (data, status) {
+            $scope.user.password = null;
           });
       };
     }]).
@@ -60,23 +80,45 @@ angular.module('myApp.controllers', []).
     function ($scope, $rootScope, $http) {
       $http.get('/api/users').
         success(function (data) {
-          $rootScope.users = data.users;
+          $rootScope.users = data;
         });
     }]).
-  controller('UserShowCtrl', ['$scope', '$http', '$routeParams',
-    function ($scope, $http, $routeParams) {
+  controller('UserShowCtrl', ['$scope', '$rootScope', '$http', '$routeParams',
+    function ($scope, $rootScope, $http, $routeParams) {
+      var findById = function (id, callback) {
+        var res = null;
+
+        if (!$rootScope.users) {
+          return callback(null);
+        }
+
+        $rootScope.users.forEach(function (user) {
+          if (user.id === id) {
+            res = user;
+          }
+        });
+        callback(res);
+      };
+
       var userId = $routeParams.id;
 
-      $http.get('/api/user/' + userId).
-        success(function (data) {
-          $scope.user = data.user;
-        });
+      findById(userId, function (user) {
+        if (user) {
+          $scope.user = user;
+        } else {
+          $http.get('/api/user/' + userId).
+            success(function (data) {
+              $scope.user = data;
+            });
+        }
+      });
+
     }]).
   controller('ProblemListCtrl', ['$scope', '$rootScope', '$http',
     function ($scope, $rootScope, $http) {
       $http.get('/api/problems').
         success(function (data) {
-          $rootScope.problems = data.problems;
+          $rootScope.problems = data;
         });
     }]).
   controller('ProblemShowCtrl', ['$scope', '$http', '$routeParams', '$sce',
@@ -89,11 +131,24 @@ angular.module('myApp.controllers', []).
           $scope.problemContents = $sce.trustAsHtml(data.contents.problem_content);
         });
     }]).
+  controller('ProblemCreateCtrl', ['$scope', '$http', '$window',
+    function ($scope, $http, $window) {
+
+      $scope.submit = function () {
+        $http.post('/api/problems', $scope.problem).
+          success(function (data) {
+            $window.history.back();
+          }).
+          error(function (data) {
+          });
+      };
+
+    }]).
   controller('SubmissionListCtrl', ['$scope', '$http',
     function ($scope, $http) {
       $http.get('/api/submissions').
         success(function (data) {
-          $scope.submissions = data.submissions;
+          $scope.submissions = data;
         });
     }]).
   controller('SubmissionShowCtrl', ['$scope', '$http', '$routeParams',
@@ -102,6 +157,22 @@ angular.module('myApp.controllers', []).
 
       $http.get('/api/submission/' + submissionId).
         success(function (data) {
-          $scope.submission = data.submission;
+          $scope.submission = data;
         });
+    }]).
+  controller('SubmissionCreateCtrl', ['$scope', '$http', '$routeParams',
+    function ($scope, $http, $routeParams) {
+      $scope.submit = function () {
+        var data = {
+          problemId: $routeParams.id,
+          language: $scope.language,
+          sourceCode: $scope.sourceCode
+        };
+
+        $http.post('/api/submissions/create', data).
+          success(function () {
+          }).
+          error(function () {
+          });
+      };
     }]);

@@ -1,0 +1,38 @@
+br
+br
+.panel.panel-default
+  .panel-heading
+    | 문제 생성
+  .panel-body
+    form(role='form')
+      .form-group
+        label(for='') 식별자
+        input.form-control(type='text', ng-model='problem.slug')
+      .form-group
+        label(for='') 이름
+        input.form-control(type='text', ng-model='problem.name')
+      .form-group
+        label(for='') 설명
+        textarea(ng-model='problem.description').form-control
+      .form-group
+        label(for='') 입력 설명
+        textarea(ng-model='problem.inputDescription').form-control
+      .form-group
+        label(for='') 출력 설명
+        textarea(ng-model='problem.outputDescription').form-control
+      .form-group
+        label(for='') 시간 제한 (ms)
+        input.form-control(type='text', ng-model='problem.timeLimit')
+      .form-group
+        label(for='') 메모리 제한 (byte)
+        input.form-control(type='text', ng-model='problem.memoryLimit')
+      .form-group
+        label(for='') 출력 제한 (byte)
+        input.form-control(type='text', ng-model='problem.diskLimit')
+      button.btn.btn-primary(ng-click='submit()') Submit
+
+.panel.panel-info
+  .panel-heading
+    | 디버깅 용
+  .panel-body
+    span {{problem}}

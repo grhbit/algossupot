@@ -1,0 +1,13 @@
+br
+br
+div.panel.panel-default
+  div.panel-heading 코드 제출
+  div.panel-body
+    select(name='' style='max-width: 20%; min-width: 30px').form-control
+      option(value="cpp") C++
+      option(value="c") C
+
+    form.form-inline(action='', method='POST', role='form')
+      .form-group
+        input.form-control(type='file', placeholder='File')
+      button.btn.btn-primary(ng-click='submit()') Submit

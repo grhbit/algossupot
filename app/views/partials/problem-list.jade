@@ -5,4 +5,4 @@ div.problems
 
   ul
     li(ng-repeat='problem in problems')
-      a(href='/problems/{{problem.id}}') {{problem.name}}
+      a(ng-href='/problems/{{problem.id}}') {{problem.name}}
