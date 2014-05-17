@@ -158,20 +158,25 @@ angular.module('myApp.controllers', []).
           $scope.submission = data;
         });
     }]).
-  controller('SubmissionCreateCtrl', ['$scope', '$http', '$routeParams',
-    function ($scope, $http, $routeParams) {
+  controller('SubmissionCreateCtrl', ['$scope', '$http', '$window', '$routeParams',
+    function ($scope, $http, $window, $routeParams) {
       $("body").animate({scrollTop: 0}, "slow");
+
       $scope.submit = function () {
         var data = {
           problemId: $routeParams.id,
-          language: $scope.language,
-          sourceCode: $scope.sourceCode
+          submission: {
+            language: $scope.submission.language,
+            sourceCode: $scope.submission.sourceCode
+          }
         };
 
-        $http.post('/api/submissions/create', data).
-          success(function () {
+        $http.post('/api/submissions', data).
+          success(function (data) {
+            $window.history.back();
           }).
-          error(function () {
+          error(function (data) {
+            alert(JSON.stringify(data));
           });
       };
     }]);

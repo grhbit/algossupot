@@ -67,39 +67,24 @@ exports.show = function (req, res) {
 };
 
 exports.create = function (req, res) {
-  if (!req.session || !req.session.user) {
-    return res.json(500, (new Error('')).toString());
-  }
-
   var findProblem = function (cb) {
-    if (req.body && req.body.problemSlug) {
-      Problem.find({where: {slug: req.body.problemSlug}}).
-        success(function (problem) {
-          if (problem) {
-            cb(null, problem);
-          } else {
-            cb((new Error('Not found problem')));
-          }
-        }).
-        error(function (err) {
-          cb(err);
-        });
-    } else {
-      return cb((new Error('Bad Request')));
+    if (req.body && req.body.problemId) {
+      return cb(null, req.body.problemId);
     }
+    return cb(new Error('Bad Request'));
   };
   var findUser = function (cb) {
-    if (req.session && req.session.user && req.session.user.id) {
-      return cb(null, req.session.user);
+    if (req.session && req.session.auth && req.session.auth.UserId) {
+      return cb(null, req.session.auth.UserId);
     }
-    return cb((new Error('Not found user')));
+    return cb(new Error('Not found user'));
   };
   var submitSourceCode = function (results, cb) {
-    if (req.body && req.body.language && req.body.sourceCode) {
+    if (req.body && req.body.submission.language && req.body.submission.sourceCode) {
       Submission.push({
-        language: req.body.language,
-        codeLength: req.body.sourceCode
-      }, results.user.id, results.problem.id, function (err) {
+        language: req.body.submission.language,
+        sourceCode: req.body.submission.sourceCode
+      }, results.userId, results.problemId, function (err) {
         if (err) {
           return cb(err);
         }
@@ -111,16 +96,17 @@ exports.create = function (req, res) {
   };
 
   async.series({
-    user: findUser,
-    problem: findProblem
+    userId: findUser,
+    problemId: findProblem
   }, function (err, results) {
     if (err) {
       return res.json(500, err);
     }
+    console.log('check');
 
     submitSourceCode(results, function (err) {
       if (err) {
-        return res.json(500, err);
+        return res.json(500, err.toString());
       }
       res.send(200);
     });

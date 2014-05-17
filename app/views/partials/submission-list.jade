@@ -11,11 +11,11 @@ br
         th.col-sm-4 닉네임
         th.col-sm-4 문제
     tbody(ng-repeat='submission in submissions')
-      tr
-        td {{submission.id}}
-        td {{submission.state | submitState}}
-        td
-          a(ng-href='/user/{{submission.UserId}}') {{(submission.UserId | loadUser).name}}
-        td
+      tr.row
+        td.col-sm-1 {{submission.id}}
+        td.col-sm-3 {{submission.state | submitState}}
+        td.col-sm-4
+          a(ng-href='/user/{{submission.UserId}}') {{(submission.UserId | loadUser).nickname}}
+        td.col-sm-4
           a(ng-href='/problem/{{submission.ProblemId}}') {{(submission.ProblemId | loadProblem).name}}
 

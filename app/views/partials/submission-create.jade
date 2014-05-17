@@ -6,11 +6,10 @@ div.panel.panel-default
     form(role='form')
       .form-group
         label(for='') 언어
-        select(name='').form-control
-          option(value="cpp") C++
-          option(value="c") C
+        select(name='' ng-model='submission.language').form-control
+          option(value="C++") C++
       .form-group
         label(for='') 소스코드
-        input.form-control(type='file' ng-model='file')
+        textarea(ng-model='submission.sourceCode' rows=10).form-control
 
       button.btn.btn-primary(ng-click='submit()') Submit

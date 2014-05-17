@@ -208,13 +208,7 @@ ClassMethods.push = function (createForm, callback) {
   };
 
   var transactionCommit = function (t, cb) {
-    t.commit().
-      success(function () {
-        cb(null);
-      }).
-      error(function (err) {
-        cb(err);
-      });
+    t.commit().success(cb);
   };
 
   async.waterfall([

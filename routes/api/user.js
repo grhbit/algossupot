@@ -7,7 +7,10 @@ var User = models.User;
 var findById = function (id, callback) {
   User.find(id)
     .success(function (user) {
-      callback(null, user);
+      if (user) {
+        return callback(null, user);
+      }
+      callback(new Error('Not found User'));
     })
     .error(function (err) {
       callback(err);

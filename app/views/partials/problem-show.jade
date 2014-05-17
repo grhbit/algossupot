@@ -6,5 +6,6 @@ br
   .panel-body
     span(ng-bind-html="trustDescription")
 
-    a(ng-href='/problem/{{problem.id}}/submit')
-      button.btn.btn-primary Submit
+    span(ng-if='problem')
+      a(ng-href='/problem/{{problem.id}}/submit')
+        button.btn.btn-primary Submit

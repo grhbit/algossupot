@@ -8,7 +8,7 @@ exports.checkAuth = function (req, res, next) {
   if (req.session && req.session.auth) {
     next();
   } else {
-    res.json(500, new Error(''));
+    res.json(500, (new Error('checkAuth failed')).toString());
   }
 };
 
@@ -16,7 +16,7 @@ exports.checkAdminAuth = function (req, res, next) {
   if (req.session && req.session.auth && (req.session.auth.isAdmin === true)) {
     next();
   } else {
-    res.json(500, new Error(''));
+    res.json(500, (new Error('checkAdminAuth failed')).toString());
   }
 };
 

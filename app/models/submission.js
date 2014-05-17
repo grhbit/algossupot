@@ -12,10 +12,14 @@ var _Submission, ClassMethods = {}, InstanceMethods = {};
 ClassMethods.push = function (submissionMember, userId, problemId, callback) {
   var User = models.User;
   var Problem = models.Problem;
+  var sequelize = models.sequelize;
   var findUserById = function (cb) {
     User.find(userId).
       success(function (user) {
-        cb(null, user);
+        if (user) {
+          return cb(null, user);
+        }
+        cb(new Error('Not found User'));
       }).
       error(function (err) {
         cb(err);
@@ -24,60 +28,108 @@ ClassMethods.push = function (submissionMember, userId, problemId, callback) {
   var findProblemById = function (cb) {
     Problem.find(problemId).
       success(function (problem) {
-        cb(null, problem);
+        if (problem) {
+          return cb(null, problem);
+        }
+        cb(new Error('Not found problem'));
       }).
       error(function (err) {
         cb(err);
       });
   };
   var createSubmission = function (err, results) {
-    var userAddSubmission = function (submission, cb) {
-      results.user.addSubmission(submission).
-        complete(function (err) {
-          cb(err);
-        });
-    };
-    var problemAddSubmission = function (submission, cb) {
-      results.problem.addSubmission(submission).
-        complete(function (err) {
-          cb(err);
-        });
-    };
-    var saveSourceCode = function (sourceCode, path, cb) {
-      fs.writeFile(path, sourceCode.replace(/(\x0d)/g, ''), function (err) {
-        if (err) {
-          return cb(err);
-        }
-        return cb(null);
+    sequelize.transaction(function (t) {
+      var submission = _Submission.build({
+        language: submissionMember.language,
+        codeLength: String(submissionMember.sourceCode).length
       });
-    };
-    var sourceCode = submissionMember.sourceCode;
 
-    if (err) {
-      return callback(err);
-    }
+      var saveSubmission = function (cb) {
+        submission.save({ transaction: t }).
+          success(function () {
+            cb(null);
+          }).
+          error(function (err) {
+            cb(err);
+          });
+      };
+      var userAddSubmission = function (cb) {
+        results.user.addSubmission(submission, { transaction: t }).
+          success(function () {
+            cb(null);
+          }).
+          error(function (err) {
+            cb(err);
+          });
+      };
+      var problemAddSubmission = function (cb) {
+        results.problem.addSubmission(submission, { transaction: t }).
+          success(function () {
+            cb(null);
+          }).
+          error(function (err) {
+            cb(err);
+          });
+      };
+      var saveSourceCode = function (cb) {
+        var dos2unix = function (cb) {
+          cb(null, submissionMember.sourceCode.replace(/(\0xd)/g, ''));
+        };
+        var makeDirectory = function (cb) {
+          var dirname = path.dirname(submission.getSourceCodePath());
+          fs.stat(dirname, function (err, stats) {
+            if (err) {
+              return mkdirp(dirname, function (err) {
+                if (err) {
+                  return cb(err);
+                }
+                cb(null);
+              });
+            }
+            if (!stats.isDirectory()) {
+              return cb(new Error('makeDirectory failed'));
+            }
 
-    _Submission.create({
-      language: submissionMember.language,
-      codeLength: sourceCode.length,
-    }).
-      success(function (submission) {
+            cb(null);
+          });
+        };
         async.waterfall([
-          async.apply(userAddSubmission, submission),
-          async.apply(problemAddSubmission, submission),
-          submission.getSourceCodePath,
-          mkdirp,
-          async.apply(saveSourceCode, sourceCode)
-        ], function (err, result) {
+          makeDirectory,
+          dos2unix,
+          async.apply(fs.writeFile, submission.getSourceCodePath())
+        ], function (err) {
           if (err) {
-            return callback(err);
+            return cb(err);
           }
-          return callback(null);
+          cb(null);
         });
-      }).
-      error(function (err) {
+      };
+      var transactionCommit = function (cb) {
+        t.commit().success(cb);
+      };
+      var transactionRollback = function (cb) {
+        t.rollback().success(cb);
+      };
+
+      if (err) {
         return callback(err);
+      }
+
+      async.waterfall([
+        saveSubmission,
+        userAddSubmission,
+        problemAddSubmission,
+        saveSourceCode,
+        transactionCommit
+      ], function (err) {
+        if (err) {
+          transactionRollback(function () {
+            return callback(err);
+          });
+        }
+        callback(null);
       });
+    });
   };
 
   async.series({
@@ -88,26 +140,20 @@ ClassMethods.push = function (submissionMember, userId, problemId, callback) {
 
 InstanceMethods.getSourceCodePath = function (callback) {
   var self = this;
-  var userSubmissionFolder = path.join(config.dir.submission, self.user.id.toString());
+  var userSubmissionFolder = path.join(config.dir.submission, self.UserId.toString());
   var sourceCodeExt = config.lang.ext[self.language];
 
-  return callback(null, path.join(userSubmissionFolder, self.id, sourceCodeExt));
+  return path.join(userSubmissionFolder, self.id.toString() + '.' + sourceCodeExt);
 };
 
 InstanceMethods.loadSourceCode = function (callback) {
   var self = this;
 
-  self.getSourceCodePath(function (err, path) {
-    async.waterfall([
-      self.getSourceCodePath,
-      fs.readFile
-    ], function (err, data) {
-      if (err) {
-        return callback(err);
-      }
-      return callback(null, data);
-    });
-
+  fs.readFile(self.getSourceCodePath(), function (err, data) {
+    if (err) {
+      return callback(err);
+    }
+    callback(null, data);
   });
 };
 
