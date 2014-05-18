@@ -63,32 +63,33 @@ InstanceMethods.loadContents = function (callback) {
 ClassMethods.push = function (createForm, callback) {
   var User = models.User;
   var sequelize = models.sequelize;
-  var checkNotNull = function (cb) {
-    if (createForm &&
-        createForm.problem &&
-        createForm.problem.slug &&
-        createForm.problem.name &&
-        createForm.problem.description &&
-        createForm.problem.timeLimit &&
-        createForm.problem.memoryLimit &&
-        createForm.problem.diskLimit) {
-      return cb(null);
-    }
-    cb(new Error('Insufficient Parameter'));
-  };
-  var checkType = function (cb) {
-    var validate = true;
-    validate = validate && (typeof createForm.problem.description === 'string');
-    validate = validate && (!isNaN(createForm.problem.timeLimit));
-    validate = validate && (!isNaN(createForm.problem.memoryLimit));
-    validate = validate && (!isNaN(createForm.problem.diskLimit));
-
-    if (validate) {
-      return cb(null);
-    }
-    cb(new Error('`problem createForm` validation failed'));
-  };
   var checkValidation = function (cb) {
+    var checkNotNull = function (cb) {
+      if (createForm &&
+          createForm.problem &&
+          createForm.problem.slug &&
+          createForm.problem.name &&
+          createForm.problem.description &&
+          createForm.problem.timeLimit &&
+          createForm.problem.memoryLimit &&
+          createForm.problem.diskLimit) {
+        return cb(null);
+      }
+      cb(new Error('Insufficient Parameter'));
+    };
+    var checkType = function (cb) {
+      var validate = true;
+      validate = validate && (typeof createForm.problem.description === 'string');
+      validate = validate && (!isNaN(createForm.problem.timeLimit));
+      validate = validate && (!isNaN(createForm.problem.memoryLimit));
+      validate = validate && (!isNaN(createForm.problem.diskLimit));
+
+      if (validate) {
+        return cb(null);
+      }
+      cb(new Error('`problem createForm` validation failed'));
+    };
+
     async.waterfall([
       checkNotNull,
       checkType
@@ -100,130 +101,109 @@ ClassMethods.push = function (createForm, callback) {
     });
   };
 
-  var findUserById = function (cb) {
-    User.find(createForm.userId).
-      success(function (user) {
-        if (user) {
-          return cb(null, user);
-        }
-        cb(new Error('Not Found User'));
-      }).
-      error(function (err) {
-        cb(err);
-      });
-  };
-  var insertByTransaction = function (user, cb) {
+  var transactionProcess = function (cb) {
     sequelize.transaction(function (t) {
-      var buildProblem = function (cb) {
-        var problem = _Problem.build({
-          slug: createForm.problem.slug,
-          name: createForm.problem.name
-        });
-        cb(null, problem);
-      };
-      var saveProblem = function (problem, cb) {
+      var problem = _Problem.build({
+        slug: createForm.problem.slug,
+        name: createForm.problem.name
+      });
+
+      var saveProblem = function (cb) {
         problem.save({transaction: t}).
-          success(function () {
-            cb(null, problem);
-          }).
-          error(function (err) {
-            cb(err);
-          });
+          success(cb).error(cb);
       };
-      var setUserAssociate = function (problem, cb) {
-        user.addProblem(problem, {transaction: t}).
-          success(function () {
-            cb(null);
+      var findUser = function (cb) {
+        User.find(createForm.userId).
+          success(function (user) {
+            if (user) {
+              return cb(null, user);
+            }
+            cb(new Error('Not Found User'));
           }).
-          error(function (err) {
-            cb(err);
+          error(cb);
+      };
+      var setUserAssociate = function (user, cb) {
+        user.addProblem(problem, {transaction: t}).
+          success(cb).error(cb);
+      };
+      var saveToStorage = function (cb) {
+        var problemDirectory = path.join(config.dir.problem, createForm.problem.slug);
+        var contents = {
+          timeLimit: createForm.problem.timeLimit,
+          memoryLimit: createForm.problem.memoryLimit,
+          diskLimit: createForm.problem.diskLimit
+        };
+
+        var saveDescription = function (cb) {
+          fs.writeFile(path.join(problemDirectory, 'description.md'), createForm.problem.description, {
+            encoding: 'utf8'
+          }, function (err) {
+            if (err) {
+              return cb(err);
+            }
+            cb(null);
           });
+        };
+        var saveAttachments = function (cb) {
+          //TODO: save createForm.problem.attachments
+          cb(null);
+        };
+        var cleanDirectorySync = function (dir) {
+          var list = fs.readdirSync(dir);
+          var i = 0, filename, stat;
+          for (i = 0; i < list.length; i = i + 1) {
+            filename = path.join(dir, list[i]);
+            stat = fs.statSync(filename);
+
+            if (stat.isDirectory()) {
+              cleanDirectorySync(filename);
+            } else {
+              fs.unlinkSync(filename);
+            }
+          }
+          fs.rmdirSync(dir);
+        };
+
+        async.waterfall([
+          async.apply(mkdirp, problemDirectory),
+          async.apply(fs.writeFile, path.join(problemDirectory, './index.json'), JSON.stringify(contents), {
+            encoding: 'utf8'
+          }),
+          saveDescription,
+          saveAttachments
+        ], function (err) {
+          if (err) {
+            cleanDirectorySync(problemDirectory);
+            return cb(err);
+          }
+          cb(null, t);
+        });
+      };
+
+      var transactionCommit = function (cb) {
+        t.commit().success(cb);
+      };
+      var transactionRollback = function (cb) {
+        t.rollback().success(cb);
       };
 
       async.waterfall([
-        buildProblem, saveProblem, setUserAssociate
+        saveProblem, findUser, setUserAssociate, saveToStorage, transactionCommit
       ], function (err) {
         if (err) {
-          return t.rollback().success(function () {
+          return transactionRollback(function () {
             cb(err);
           });
         }
-        return cb(null, t);
+        return cb(null);
       });
     });
-  };
-  var saveToStorage = function (t, cb) {
-    var problemDirectory = path.join(config.dir.problem, createForm.problem.slug);
-    var contents = {
-      timeLimit: createForm.problem.timeLimit,
-      memoryLimit: createForm.problem.memoryLimit,
-      diskLimit: createForm.problem.diskLimit
-    };
-
-    var saveDescription = function (cb) {
-      fs.writeFile(path.join(problemDirectory, 'description.md'), createForm.problem.description, {
-        encoding: 'utf8'
-      }, function (err) {
-        if (err) {
-          return cb(err);
-        }
-        cb(null);
-      });
-    };
-    var saveAttachments = function (cb) {
-      //TODO: save createForm.problem.attachments
-      cb(null);
-    };
-    var cleanDirectorySync = function (dir) {
-      var list = fs.readdirSync(dir);
-      var i = 0, filename, stat;
-      for (i = 0; i < list.length; i = i + 1) {
-        filename = path.join(dir, list[i]);
-        stat = fs.statSync(filename);
-
-        if (stat.isDirectory()) {
-          cleanDirectorySync(filename);
-        } else {
-          fs.unlinkSync(filename);
-        }
-      }
-      fs.rmdirSync(dir);
-    };
-
-    async.waterfall([
-      async.apply(mkdirp, problemDirectory),
-      async.apply(fs.writeFile, path.join(problemDirectory, './index.json'), JSON.stringify(contents), {
-        encoding: 'utf8'
-      }),
-      saveDescription,
-      saveAttachments
-    ], function (err) {
-      if (err) {
-        console.log(require('util').inspect(err));
-        cleanDirectorySync(problemDirectory);
-        return cb(err);
-      }
-      cb(null, t);
-    });
-  };
-
-  var transactionCommit = function (t, cb) {
-    t.commit().success(cb);
   };
 
   async.waterfall([
     checkValidation,
-    findUserById,
-    insertByTransaction,
-    saveToStorage,
-    transactionCommit
-  ], function (err) {
-    if (err) {
-      return callback(err);
-    }
-    callback(null);
-  });
-
+    transactionProcess
+  ], callback);
 };
 
 module.exports = function (sequelize, DataTypes) {

@@ -4,17 +4,23 @@
 
 var User = models.User;
 
-var findById = function (id, callback) {
-  User.find(id)
-    .success(function (user) {
-      if (user) {
-        return callback(null, user);
-      }
-      callback(new Error('Not found User'));
-    })
-    .error(function (err) {
-      callback(err);
-    });
+var findUser = function (identifier, callback) {
+  var nullUserCheck = function (user) {
+    if (user) {
+      return callback(null, user);
+    }
+    callback(new Error('Not found user'));
+  };
+
+  if (/$[0-9]+^/.test(identifier.toString())) {
+    User.find(identifier).
+      success(nullUserCheck).
+      error(callback);
+  } else {
+    User.find({where: {nickname: identifier}}).
+      success(nullUserCheck).
+      error(callback);
+  }
 };
 
 var updateUser = function (data, user, callback) {
@@ -58,12 +64,12 @@ exports.new = function (req, res) {
 exports.show = function (req, res) {
   var id = req.params.id;
 
-  findById(id, function (err, user) {
+  findUser(id, function (err, user) {
     if (err) {
-      return res.json(500, { error: err.toString() });
+      return res.json(500, err.toString());
     }
+    res.json(user);
 
-    res.json(200, user);
   });
 };
 
@@ -76,14 +82,14 @@ exports.update = function (req, res) {
   var data = {};
 
   async.waterfall([
-    async.apply(findById, id),
+    async.apply(findUser, id),
     async.apply(updateUser, data)
   ], function (err) {
     if (err) {
-      return res.send(500, { error: err.toString() });
+      return res.json(500, err.toString());
     }
 
-    res.json({});
+    res.send(200);
   });
 };
 
@@ -91,13 +97,13 @@ exports.destroy = function (req, res) {
   var id = req.params.id;
 
   async.waterfall([
-    async.apply(findById, id),
+    async.apply(findUser, id),
     destroyUser
   ], function (err) {
     if (err) {
-      return res.json(500, { error: err.toString() });
+      return res.json(500, err.toString());
     }
 
-    return res.json({});
+    return res.send(200);
   });
 };
