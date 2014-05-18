@@ -37,15 +37,16 @@ app.use(morgan('dev'));
 app.use(bodyParser());
 app.use(methodOverride());
 app.use(cookieParser('S3CRE7'));
+/*
 app.use(session({
   secret: 'session password',
 }));
-/*
+*/
 app.use(session({ store: new RedisStore({
   host: '127.0.0.1',
   port: 6379,
-}), secret: 'SEKR37', key: 'sid', cookie: { secure: true } }));
-*/
+  ttl: 60 * 30
+}), secret: 'SEKR37'}));
 
 app.set('port', process.env.PORT || 17239);
 app.set('views', path.join(__dirname, 'app/views'));
