@@ -14,7 +14,7 @@ Config.dir = {
 };
 
 Config.judge = {
-  script: path.join(rootDirectory, './judge/start.py')
+  script: path.join(rootDirectory, './judge/py/start.py')
 };
 
 Config.state = [

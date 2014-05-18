@@ -5,7 +5,7 @@ var fs = require('fs');
 var path = require('path');
 var util = require('util');
 var mkdirp = require('mkdirp');
-var Judge = require('../../judge');
+var PyProc = require('../../judge').PyProc;
 
 var _Submission, ClassMethods = {}, InstanceMethods = {};
 
@@ -127,6 +127,7 @@ ClassMethods.push = function (submissionMember, userId, problemId, callback) {
             return callback(err);
           });
         }
+        submission.judge();
         callback(null);
       });
     });
@@ -171,27 +172,27 @@ InstanceMethods.updateState = function (state, callback) {
   }
 
   self.state = iState;
-  self.save(['state'])
-    .success(function () {
-      return callback(null, self);
-    }).error(function (err) {
-      return callback(err);
-    });
+  self.updateAttributes({
+    state: iState
+  }).
+    success(callback).
+    error(callback);
 };
 
-InstanceMethods.judge = function (callback) {
-  var self = this,
-    judgeStream = new Judge(self);
+InstanceMethods.judge = function () {
+  var self = this;
 
-  judgeStream
-    .on('state', function (state) {
-      self.updateState(state, function (err, submission) {
-        return undefined;
-      });
-    })
-    .on('exit', function (code) {
-      callback(null, code);
-    });
+  new PyProc({
+    'problem-dir': '',
+    'working-dir': config.dir.storage,
+    'source-path': self.getSourceCodePath(),
+    'language': self.language
+  }, function (state, cb) {
+    console.log(state);
+    self.updateState(state, cb);
+  }, function (code) {
+    console.log('code: ' + code);
+  });
 };
 
 module.exports = function (sequelize, DataTypes) {

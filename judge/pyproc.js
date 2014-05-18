@@ -27,7 +27,7 @@ function PySubprocess(obj, callback, end) {
   };
 
   proc.stdin.setEncoding = 'utf-8';
-  proc.on('stderr', function (data) {
+  proc.stderr.on('data', function (data) {
     text += data;
 
     while (true) {

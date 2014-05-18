@@ -8,14 +8,16 @@ br
       tr.row
         th.col-sm-1 #
         th.col-sm-3 상태
-        th.col-sm-4 닉네임
-        th.col-sm-4 문제
+        th.col-sm-3 닉네임
+        th.col-sm-3 문제
+        th.col-sm-2 코드길이
     tbody(ng-repeat='submission in submissions')
       tr.row
         td.col-sm-1 {{submission.id}}
         td.col-sm-3 {{submission.state | submitState}}
-        td.col-sm-4
+        td.col-sm-3
           a(ng-href='/user/{{submission.UserId}}') {{(submission.UserId | loadUser).nickname}}
-        td.col-sm-4
+        td.col-sm-3
           a(ng-href='/problem/{{submission.ProblemId}}') {{(submission.ProblemId | loadProblem).name}}
-
+        td.col-sm-2
+          span {{submission.codeLength}}

@@ -102,7 +102,6 @@ exports.create = function (req, res) {
     if (err) {
       return res.json(500, err);
     }
-    console.log('check');
 
     submitSourceCode(results, function (err) {
       if (err) {

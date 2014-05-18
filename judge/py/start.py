@@ -45,6 +45,7 @@ def main(args):
         file.close()
 
         print >> sys.stderr, 'Compile Error'
+        sys.stderr.flush()
         wait_input()
         sys.exit(os.EX_CANTCREAT);
 

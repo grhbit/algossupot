@@ -110,7 +110,10 @@ ClassMethods.push = function (createForm, callback) {
 
       var saveProblem = function (cb) {
         problem.save({transaction: t}).
-          success(cb).error(cb);
+          success(function (problem) {
+            cb();
+          }).
+          error(cb);
       };
       var findUser = function (cb) {
         User.find(createForm.userId).
@@ -124,7 +127,9 @@ ClassMethods.push = function (createForm, callback) {
       };
       var setUserAssociate = function (user, cb) {
         user.addProblem(problem, {transaction: t}).
-          success(cb).error(cb);
+          success(function () {
+            cb();
+          }).error(cb);
       };
       var saveToStorage = function (cb) {
         var problemDirectory = path.join(config.dir.problem, createForm.problem.slug);
@@ -176,7 +181,7 @@ ClassMethods.push = function (createForm, callback) {
             cleanDirectorySync(problemDirectory);
             return cb(err);
           }
-          cb(null, t);
+          cb(null);
         });
       };
 
