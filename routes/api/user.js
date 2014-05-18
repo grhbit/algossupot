@@ -12,7 +12,7 @@ var findUser = function (identifier, callback) {
     callback(new Error('Not found user'));
   };
 
-  if (/$[0-9]+^/.test(identifier.toString())) {
+  if (/^[0-9]+$/.test(identifier.toString())) {
     User.find(identifier).
       success(nullUserCheck).
       error(callback);
