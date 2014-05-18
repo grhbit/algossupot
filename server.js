@@ -12,6 +12,7 @@ winston.setLevels(winston.config.syslog.levels);
 
 var models = global.models = require('./app/models');
 var async = global.async = require('async');
+var lodash = global._ = require('lodash');
 var routes = require('./routes');
 var api = routes.api;
 
@@ -67,13 +68,11 @@ router.route('/auths/logout')
   .post(api.auth.logout);
 
 router.route('/users')
-  .get(api.user.list)
-  .post(api.user.create);
+  .get(api.user.list);
 
 router.route('/user/:id')
   .get(api.user.show)
-  .put(api.user.update)
-  .delete(api.auth.checkAdminAuth, api.user.destroy);
+  .put(api.user.update);
 
 router.route('/problems')
   .get(api.problem.list)
@@ -81,12 +80,11 @@ router.route('/problems')
 
 router.route('/problem/:id')
   .get(api.problem.show)
-  .put(api.problem.update)
-  .delete(api.problem.destroy);
+  .put(api.problem.update);
 
 router.route('/submissions')
   .get(api.submission.list)
-  .post(api.submission.create);
+  .post(api.auth.checkAuth, api.submission.create);
 
 router.route('/submission/:id')
   .get(api.submission.show)

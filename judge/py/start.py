@@ -8,6 +8,10 @@ def wait_input():
         line = sys.stdin.readline().strip()
         if line == "OK":
             break
+        elif line == "NO":
+            sys.exit(os.EX_IOERR);
+        else:
+            sys.exit(os.EX_IOERR);
 
 def main(args):
     # constants
@@ -43,6 +47,10 @@ def main(args):
         print >> sys.stderr, 'Compile Error'
         wait_input()
         sys.exit(os.EX_CANTCREAT);
+
+    print >> sys.stderr, 'Accepted'
+    wait_input()
+    return os.EX_OK
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

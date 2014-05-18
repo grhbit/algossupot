@@ -53,12 +53,8 @@ exports.list = function (req, res) {
       res.json(users);
     })
     .error(function (err) {
-      res.send(500, { error: err.toString() });
+      res.json(500, err.toString());
     });
-};
-
-exports.new = function (req, res) {
-  return undefined;
 };
 
 exports.show = function (req, res) {
@@ -69,12 +65,7 @@ exports.show = function (req, res) {
       return res.json(500, err.toString());
     }
     res.json(user);
-
   });
-};
-
-exports.create = function (req, res) {
-  return undefined;
 };
 
 exports.update = function (req, res) {
