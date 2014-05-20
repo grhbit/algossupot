@@ -2,19 +2,24 @@
 /*global _, async, config, models*/
 'use strict';
 
+var tmp = require('temporary');
 var spawn = require('child_process').spawn;
 
 function PySubprocess(obj, callback, end) {
-  var opt = {
+  this.opt = {
     'problem-dir': obj['problem-dir'] || null,
-    'working-dir': obj['working-dir'] || null,
+    'working-dir': obj['working-dir'] || (new tmp.Dir()).path,
     'source-path': obj['source-path'] || null,
     'language': obj.language || null
-  },
-    args = [config.judge.script],
-    proc, text = '', newlineIndex, stateStr, reply;
+  };
+  var args = [config.judge.script],
+    proc,
+    text = '',
+    newlineIndex,
+    stateStr,
+    reply;
 
-  _.forIn(opt, function (val, key) {
+  _.forIn(this.opt, function (val, key) {
     args.push('--' + key + '=' + val);
   });
 

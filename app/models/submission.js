@@ -139,7 +139,7 @@ ClassMethods.push = function (submissionMember, userId, problemId, callback) {
   }, createSubmission);
 };
 
-InstanceMethods.getSourceCodePath = function (callback) {
+InstanceMethods.getSourceCodePath = function () {
   var self = this;
   var userSubmissionFolder = path.join(config.dir.submission, self.UserId.toString());
   var sourceCodeExt = config.lang.ext[self.language];
@@ -147,10 +147,28 @@ InstanceMethods.getSourceCodePath = function (callback) {
   return path.join(userSubmissionFolder, self.id.toString() + '.' + sourceCodeExt);
 };
 
+InstanceMethods.getErrorPath = function () {
+  var self = this;
+  var userSubmissionFolder = path.join(config.dir.submission, self.UserId.toString());
+
+  return path.join(userSubmissionFolder, self.id.toString() + '.err');
+};
+
 InstanceMethods.loadSourceCode = function (callback) {
   var self = this;
 
   fs.readFile(self.getSourceCodePath(), function (err, data) {
+    if (err) {
+      return callback(err);
+    }
+    callback(null, data);
+  });
+};
+
+InstanceMethods.loadErrorMessage = function (callback) {
+  var self = this;
+
+  fs.readFile(self.getErrorPath(), function (err, data) {
     if (err) {
       return callback(err);
     }
@@ -181,18 +199,36 @@ InstanceMethods.updateState = function (state, callback) {
 
 InstanceMethods.judge = function () {
   var self = this;
+  var pyproc = function (problem) {
+    var pypy = new PyProc({
+      'problem-dir': (self.problem || problem).getPath(),
+      'source-path': self.getSourceCodePath(),
+      'language': self.language
+    }, function (state, cb) {
+      console.log(state);
+      self.updateState(state, function () {
+        if (state === 'Compile Error') {
+          var dstPath = self.getErrorPath();
+          var srcPath = path.join(pypy.opt['working-dir'], './compile.err');
+          fs.writeFileSync(dstPath, fs.readFileSync(srcPath));
+        }
 
-  new PyProc({
-    'problem-dir': '',
-    'working-dir': config.dir.storage,
-    'source-path': self.getSourceCodePath(),
-    'language': self.language
-  }, function (state, cb) {
-    console.log(state);
-    self.updateState(state, cb);
-  }, function (code) {
-    console.log('code: ' + code);
-  });
+        cb();
+      });
+    }, function (code) {
+      console.log('code: ' + code);
+    });
+  };
+
+  if (!self.problem) {
+    self.getProblem().
+      success(function (problem) {
+        pyproc(problem);
+      }).
+      error(function (err) {
+        self.updateState('Internal Error');
+      });
+  }
 };
 
 module.exports = function (sequelize, DataTypes) {

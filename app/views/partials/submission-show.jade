@@ -1,1 +1,11 @@
-p Submission
+br
+br
+.panel.panel-default
+  .panel-heading
+    | 제출 # {{submission.id}}
+  .panel-body
+    pre
+      | {{submission.sourceCode}}
+    label(ng-if='!!submission.errorMessage') 에러 메시지
+        pre
+          | {{submission.errorMessage}}

@@ -62,7 +62,20 @@ exports.show = function (req, res) {
       return res.json(500, err.toString());
     }
 
-    res.json(submission);
+    async.series({
+      sourceCode: function (cb) { submission.loadSourceCode(cb); },
+      errorMessage: function (cb) { submission.loadErrorMessage(cb); }
+    }, function (err, results) {
+      if (results.sourceCode) {
+        submission.values.sourceCode = String(results.sourceCode, 'utf8');
+      }
+      if (results.errorMessage) {
+        submission.values.errorMessage = String(results.errorMessage, 'utf8');
+      }
+
+      res.json(submission);
+    });
+
   });
 };
 

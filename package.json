@@ -13,7 +13,6 @@
     "cookie-parser": "~1.0.0",
     "express-session": "~1.0.0",
     "connect-redis": "~2.0.0",
-
     "async": "*",
     "crypto": "*",
     "hashish": "*",
@@ -22,6 +21,7 @@
     "marked": "*",
     "mkdirp": "*",
     "sequelize": "~1.7.2",
-    "winston": "*"
+    "winston": "*",
+    "temporary": "0.0.8"
   }
 }

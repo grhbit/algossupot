@@ -6,27 +6,47 @@ br
   .panel-body
     form(role='form')
       .form-group
-        label(for='') 식별자
-        input.form-control(type='text', ng-model='problem.slug')
+        label(for='problem-slug') 식별자
+        input.form-control(type='text', ng-model='problem.slug')#problem-slug
       .form-group
-        label(for='') 이름
-        input.form-control(type='text', ng-model='problem.name')
+        label(for='problem-name') 이름
+        input.form-control(type='text', ng-model='problem.name')#problem-name
       .form-group
-        label(for='') 설명
-        textarea(ng-model='problem.description' rows=10).form-control
-      .form-group
-        label(for='') 시간 제한 (ms)
-        input.form-control(type='text', ng-model='problem.timeLimit')
-      .form-group
-        label(for='') 메모리 제한 (byte)
-        input.form-control(type='text', ng-model='problem.memoryLimit')
-      .form-group
-        label(for='') 출력 제한 (byte)
-        input.form-control(type='text', ng-model='problem.diskLimit')
+        label(for='problem-description') 설명
+        textarea(ng-model='problem.description' rows=10).form-control#problem-description
+      .panel.panel-default.panel-collapse
+        .panel-heading
+          | 채점
+        .panel-body.panel-collapse
+          .row
+            .form-group.col-sm-4
+              label(for='problem-timeLimit') 시간 제한 (ms)
+              input.form-control(type='text', ng-model='problem.timeLimit')#problem-timeLimit
+              help
+            .form-group.col-sm-4
+              label(for='problem-memoryLimit') 메모리 제한 (byte)
+              input.form-control(type='text', ng-model='problem.memoryLimit')#problem-memoryLimit
+            .form-group.col-sm-4
+              label(for='problem-diskLimit') 출력 제한 (byte)
+              input.form-control(type='text', ng-model='problem.diskLimit')#problem-diskLimit
+          .row
+            .form-group.col-sm-4
+              label(for='problem-judgeModule') 채점방식
+              select(ng-model='problem.judgeModule').form-control#problem-judgeModule
+                option(value='1') 1
+                option(value='2') 2
+                option(value='3') 3
+
+            span(ng-if='problem.judgeModule == 3')
+              .form-group.col-sm-4
+                label(for='problem-judgeScript') 채점 스크립트
+                input(ng-model='problem.judgeScript').form-control#problem-judgeScript
+
       button.btn.btn-primary(ng-click='submit()') Submit
 
 .panel.panel-info
   .panel-heading
     | 디버깅 용
   .panel-body
-    span {{problem}}
+    pre
+      span {{problem}}

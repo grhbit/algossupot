@@ -110,12 +110,17 @@ angular.module('myApp.controllers', []).
       });
 
     }]).
-  controller('ProblemListCtrl', ['$scope', '$rootScope', '$http',
-    function ($scope, $rootScope, $http) {
+  controller('ProblemListCtrl', ['$scope', '$rootScope', '$http', '$location',
+    function ($scope, $rootScope, $http, $location) {
+      $scope.go = function (problem) {
+        $location.url('/problem/' + problem.id);
+      };
+
       $http.get('/api/problems').
         success(function (data) {
           $rootScope.problems = data;
         });
+
     }]).
   controller('ProblemShowCtrl', ['$scope', '$http', '$routeParams', '$sce',
     function ($scope, $http, $routeParams, $sce) {

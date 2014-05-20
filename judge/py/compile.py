@@ -1,8 +1,10 @@
+import os
 import sys
 import subprocess
 
+platform = os.uname()[0]
+
 def __execute(cmd):
-    print >> sys.stdout, cmd
     fd = subprocess.Popen(cmd,
             shell=True,
             stdin=subprocess.PIPE,
@@ -11,12 +13,16 @@ def __execute(cmd):
     fd.wait()
     return fd.stdout, fd.stderr, fd.returncode
 
-def cpp(sourceCodePath, outputPath):
-    cmd = 'g++ -static -o ' + outputPath + ' ' + sourceCodePath
+def cpp(outputPath):
+    cmd = 'g++ source.cpp -o ' + outputPath
+
+    if platform != "Darwin":
+        cmd += ' -static'
+
     return __execute(cmd);
 
-def execute(language, sourceCodePath, outputPath):
+def execute(language, outputPath):
     langMap = {
         'C++': cpp
     }
-    return langMap.get(language)(sourceCodePath, outputPath)
+    return langMap.get(language)(outputPath)

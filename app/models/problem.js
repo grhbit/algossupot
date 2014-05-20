@@ -8,6 +8,10 @@ var path = require('path'),
 
 var _Problem, ClassMethods = {}, InstanceMethods = {};
 
+InstanceMethods.getPath = function () {
+  return path.join(config.dir.problem, String(this.slug));
+};
+
 InstanceMethods.loadContents = function (callback) {
   var self = this,
     problemDir = path.join(config.dir.problem, String(self.slug)),
