@@ -66,7 +66,7 @@ def main(args):
         elif opt == '--language':
             language = arg
 
-    open('/Users/seonggwang/pyproc.log', "a").write(working_dir + '\n')
+    #open('/Users/seonggwang/pyproc.log', "a").write(working_dir + '\n')
     os.chdir(working_dir)
     shutil.copy(source_path, './source.' + langExtMap.get(language))
     output_path = RUNNABLE;
@@ -93,6 +93,6 @@ if __name__ == "__main__":
         sys.exit(main(sys.argv))
     except Exception, e:
         print >> sys.stderr, 'Internal Error'
-        open('/Users/seonggwang/pyproc.log', "a").write(e.message + '\n')
+        #open('/Users/seonggwang/pyproc.log', "a").write(e.message + '\n')
         wait_input()
         sys.exit(os.EX_IOERR)
