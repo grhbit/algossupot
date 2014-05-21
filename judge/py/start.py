@@ -5,11 +5,16 @@ import getopt
 import tempfile
 import shutil
 
+import constants
 import compile
+import problem
 
-langExtMap = {
-    'C++': 'cpp'
-}
+RESULT_PATH = constants.RESULT_PATH
+ERROR_PATH = constants.ERROR_PATH
+TimeLimitExceed = constants.TimeLimitExceedException
+MemoryLimitExceed = constants.MemoryLimitExceedException
+DiskLimitExceed = constants.DiskLimitExceedException
+RuntimeError = constants.RuntimeErrorException
 
 def wait_input():
     while True:
@@ -21,32 +26,29 @@ def wait_input():
         else:
             sys.exit(os.EX_IOERR);
 
-def read_problem(problem_index_path):
-    try:
-        root = json.loads(open(problem_path).read())
-        contetns = root.get('contents')
+def write_result_json(time, memory, disk):
+    result = {
+        'time': time,
+        'memory': memory,
+        'disk': disk
+    }
 
-        inputPath = contents.get('input')
-        outputPath = contents.get('output')
-        time_limit = int(contents.get('timeLimit', '1024'))
-        memory_limit = int(contents.get('memoryLimit', '1024'))
-        disk_limit = int(contents.get('diskLimit', '1024'))
+    resultJSON = json.dumps(result)
 
-        return {
-            'timeLimit': time_limit,
-            'memoryLimit': memory_limit,
-            'diskLimit': disk_limit
-        }
-    except (IOError, ValueError, KeyError):
-        print >> sys.stderr, 'Internal Error'
-        wait_input()
-        return os.EX_IOERR
+    file = open(RESULT_PATH, 'w')
+    file.write(resultJSON)
+    file.close()
+
+def write_error_log(err_message):
+    if len(err_message) not 0:
+        file = open(ERROR_PATH, 'w')
+        file.write(err_message)
+        file.close()
 
 def main(args):
-    # constants
-    RUNNABLE = './Main.o'
-    RESULT = './result.json'
-    COMPILE_ERROR = './compile.err'
+    # constants values
+    RUNNABLE_PATH = constants.RUNNABLE_PATH
+    LANG_EXT_MAP = constants.LANG_EXT_MAP
 
     # default values
     problem_dir = ''
@@ -68,14 +70,12 @@ def main(args):
 
     #open('/Users/seonggwang/pyproc.log', "a").write(working_dir + '\n')
     os.chdir(working_dir)
-    shutil.copy(source_path, './source.' + langExtMap.get(language))
-    output_path = RUNNABLE;
+    shutil.copy(source_path, './source.' + LANG_EXT_MAP.get(language))
+    output_path = RUNNABLE_PATH;
     out, err, returncode = compile.execute(language, output_path)
 
     if returncode != 0:
-        file = open(os.path.join(working_dir, COMPILE_ERROR), "w")
-        file.write(err.read())
-        file.close()
+        write_error_log(err.read())
 
         print >> sys.stderr, 'Compile Error'
         wait_input()
@@ -91,6 +91,30 @@ if __name__ == "__main__":
 
     try:
         sys.exit(main(sys.argv))
+    except TimeLimitExceed, e:
+        write_result_json(time=e.time, memory=e.memory, disk=e.disk)
+        write_error_log(e.stderr.read())
+        print >> sys.stderr, 'Time Limit Exceed'
+        wait_input()
+        sys.exit(os.EX_IOERR)
+    except MemoryLimitExceed, e:
+        write_result_json(time=e.time, memory=e.memory, disk=e.disk)
+        write_error_log(e.stderr.read())
+        print >> sys.stderr, 'Memory Limit Exceed'
+        wait_input()
+        sys.exit(os.EX_IOERR)
+    except DiskLimitExceedException, e:
+        write_result_json(time=e.time, memory=e.memory, disk=e.disk)
+        write_error_log(e.stderr.read())
+        print >> sys.stderr, 'Output Limit Exceed'
+        wait_input()
+        sys.exit(os.EX_IOERR)
+    except RuntimeError, e:
+        write_result_json(time=e.time, memory=e.memory, disk=e.disk)
+        write_error_log(e.stderr.read())
+        print >> sys.stderr, 'Runtime Error'
+        wait_input()
+        sys.exit(os.EX_OSERR)
     except Exception, e:
         print >> sys.stderr, 'Internal Error'
         #open('/Users/seonggwang/pyproc.log', "a").write(e.message + '\n')
