@@ -164,7 +164,7 @@ def execute(executable, *args, **kwds):
 
 if __name__ == "__main__":
     try:
-        execute("ls")
+        execute(sys.argv[1], sys.argv[2:])
     except Exception, e:
         print type(e)
         print e
