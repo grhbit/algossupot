@@ -13,6 +13,7 @@
     "cookie-parser": "~1.0.0",
     "express-session": "~1.0.0",
     "connect-redis": "~2.0.0",
+    "jade": "~1.3.1",
     "async": "*",
     "crypto": "*",
     "hashish": "*",
@@ -21,6 +22,7 @@
     "marked": "*",
     "mkdirp": "*",
     "sequelize": "~1.7.2",
+    "mariasql": "~0.1.20",
     "winston": "*",
     "temporary": "0.0.8"
   }
