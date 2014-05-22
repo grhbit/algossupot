@@ -40,7 +40,7 @@ def write_result_json(time, memory, disk):
     file.close()
 
 def write_error_log(err_message):
-    if len(err_message) not 0:
+    if not(len(err_message) == 0):
         file = open(ERROR_PATH, 'w')
         file.write(err_message)
         file.close()
@@ -103,7 +103,7 @@ if __name__ == "__main__":
         print >> sys.stderr, 'Memory Limit Exceed'
         wait_input()
         sys.exit(os.EX_IOERR)
-    except DiskLimitExceedException, e:
+    except DiskLimitExceed, e:
         write_result_json(time=e.time, memory=e.memory, disk=e.disk)
         write_error_log(e.stderr.read())
         print >> sys.stderr, 'Output Limit Exceed'
