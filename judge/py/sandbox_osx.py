@@ -1,9 +1,7 @@
-# -- coding: utf-8 --
+# --coding: utf-8 --
 import os
 import sys
 import subprocess
-import resource
-import getopt
 import time
 
 import threading
@@ -19,8 +17,6 @@ TimeLimitExceed = constants.TimeLimitExceedException
 MemoryLimitExceed = constants.MemoryLimitExceedException
 DiskLimitExceed = constants.DiskLimitExceedException
 RuntimeError = constants.RuntimeErrorException
-
-platform = os.uname()[0]
 
 class AsyncPipeReader(threading.Thread):
     def __init__(self, fd, queue):
@@ -52,19 +48,16 @@ def __execute(*cmd, **kwds):
             if diskLimit < disk:
                 raise DiskLimitExceed(time=time,
                     memory=memory,
-                    disk=disk,
                     stderr=proc.stderr)
 
             if timeLimit < time:
                 raise TimeLimitExceed(time=time,
                     memory=memory,
-                    disk=diskSize,
                     stderr=proc.stderr)
 
             if memoryLimit < memory:
                 raise MemoryLimitExceed(time=time,
                     memory=memory,
-                    disk=diskSize,
                     stderr=proc.stderr)
 
         # 시간 및 메모리, 출력물의 초기값을 설정합니다.
@@ -115,7 +108,6 @@ def __execute(*cmd, **kwds):
         if proc.returncode != 0:
             raise RuntimeError(time=executeTime,
                 memory=maxrss,
-                disk=diskSize,
                 stderr=proc.stderr)
 
     except (TimeLimitExceed, MemoryLimitExceed, DiskLimitExceed, RuntimeError) as e:
@@ -131,7 +123,7 @@ def __execute(*cmd, **kwds):
             proc.terminate()
         raise OSError("Sandboxing Failed.")
 
-def mac(executable, cmd, **kwds):
+def execute(executable, cmd, **kwds):
     #workingDirectory = kwds['working-dir']
     workingDirectory = '/bin/'
 
@@ -148,23 +140,3 @@ def mac(executable, cmd, **kwds):
     if len(cmd) is not 0:
         baseCmd.extend(*cmd)
     __execute(baseCmd)
-
-def linux(execute, *args, **kwds):
-    # 리눅스에서는 pysandbox 아니면 lxc-container를 사용할겁니다.
-    pass
-
-def execute(executable, *args, **kwds):
-    platformMap = {
-        'Darwin': mac,
-        'Linux': linux
-    }
-
-    platformMap.get(platform)(executable=executable, cmd=args, **kwds)
-
-
-if __name__ == "__main__":
-    try:
-        execute(sys.argv[1], sys.argv[2:])
-    except Exception, e:
-        print type(e)
-        print e

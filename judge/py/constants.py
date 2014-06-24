@@ -11,10 +11,9 @@ DEFAULT_MEMORYLIMIT = 1024 * 10 # (bytes)
 DEFUALT_DISKLIMIT = 1024 * 1024 # (bytes)
 
 class RunningException(Exception):
-    def __init__(self, time, memory, disk, stderr):
+    def __init__(self, time, memory, stderr):
         self.time = time
         self.memory = memory
-        self.disk = disk
         self.stderr = stderr
 
 class TimeLimitExceedException(RunningException):

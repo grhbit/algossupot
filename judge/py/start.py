@@ -92,25 +92,25 @@ if __name__ == "__main__":
     try:
         sys.exit(main(sys.argv))
     except TimeLimitExceed, e:
-        write_result_json(time=e.time, memory=e.memory, disk=e.disk)
+        write_result_json(time=e.time, memory=e.memory)
         write_error_log(e.stderr.read())
         print >> sys.stderr, 'Time Limit Exceed'
         wait_input()
         sys.exit(os.EX_IOERR)
     except MemoryLimitExceed, e:
-        write_result_json(time=e.time, memory=e.memory, disk=e.disk)
+        write_result_json(time=e.time, memory=e.memory)
         write_error_log(e.stderr.read())
         print >> sys.stderr, 'Memory Limit Exceed'
         wait_input()
         sys.exit(os.EX_IOERR)
     except DiskLimitExceed, e:
-        write_result_json(time=e.time, memory=e.memory, disk=e.disk)
+        write_result_json(time=e.time, memory=e.memory)
         write_error_log(e.stderr.read())
         print >> sys.stderr, 'Output Limit Exceed'
         wait_input()
         sys.exit(os.EX_IOERR)
     except RuntimeError, e:
-        write_result_json(time=e.time, memory=e.memory, disk=e.disk)
+        write_result_json(time=e.time, memory=e.memory)
         write_error_log(e.stderr.read())
         print >> sys.stderr, 'Runtime Error'
         wait_input()
