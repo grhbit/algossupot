@@ -110,6 +110,8 @@ def __execute(*cmd, **kwds):
                 memory=maxrss,
                 stderr=proc.stderr)
 
+        return stdoutData, proc.stderr.read(), proc.returncode
+
     except (TimeLimitExceed, MemoryLimitExceed, DiskLimitExceed, RuntimeError) as e:
         # 시간 초과, 메모리 사용량 초과, 출력물 제한 용량 초과 시 이를 그대로 다른 try문에 던집니다.
         # start.py에 있는 except문에서 잘 처리해줄겁니다.
@@ -139,4 +141,4 @@ def execute(executable, cmd, **kwds):
     baseCmd = ['sandbox-exec', '-p', baseProfile.format(workingDirectory, executable), executable]
     if len(cmd) is not 0:
         baseCmd.extend(*cmd)
-    __execute(baseCmd)
+    return __execute(baseCmd)

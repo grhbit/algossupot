@@ -2,22 +2,20 @@
 import os
 import getopt
 
-import sandbox_osx
-import sandbox_linux
-
 platform = os.uname()[0]
 
-def execute(executable, *args, **kwds):
-    platformMap = {
-        'Darwin': sandbox_osx.execute,
-        'Linux': sandbox_linux.execute
-    }
+if platform == 'Darwin':
+    from sandbox_osx import execute
 
-    platformMap.get(platform)(executable=executable, cmd=args, **kwds)
+if platform == 'Linux':
+    from sandbox_linux import execute
 
+def run(executable, *args, **kwds):
+    return execute(executable=executable, cmd=args, **kwds)
 
 if __name__ == "__main__":
     try:
+        pass
     except Exception, e:
         print type(e)
         print e

@@ -2,6 +2,7 @@
 import os
 import sys
 import constants
+import tempfile
 
 TimeLimitExceed = constants.TimeLimitExceedException
 MemoryLimitExceed = constants.MemoryLimitExceedException
@@ -24,16 +25,16 @@ def __result_name(r):
     return ('PD', 'OK', 'RF', 'ML', 'OL', 'TL', 'RT', 'AT', 'IE', 'BP')[r] \
         if r in xrange(10) else None
 
-def execute(execute, *args, **kwds):
-    # 리눅스에서는 pysandbox 아니면 lxc를 사용할겁니다.
-    #TODO: lxc로 변경
+def execute(executable, cmd, **kwds):
+
+    out = tempfile.TemporaryFile(mode='w+')
+    err = tempfile.TemporaryFile(mode='w+')
 
     configure = {
-        'language': 'cpp',
-        'args': execute,
+        'args': executable,
         'stdin': sys.stdin,
-        'stdout': sys.stdout,
-        'stderr': sys.stderr,
+        'stdout': out,
+        'stderr': err,
         'quota': dict(wallclock = kwds.pop('timeLimit', 10) + 10,
                       cpu = kwds.pop('timeLimit', 10),
                       memory = kwds.pop('memoryLimit', 1024*1024*2),
@@ -43,27 +44,38 @@ def execute(execute, *args, **kwds):
     customSandbox = CustomSandbox(**configure)
     customSandbox.run()
 
+    stdoutData = out.read()
+    stderrData = err.read()
+
+    print stdoutData
+    print stderrData
+
+    out.close()
+    err.close()
+
     d = Sandbox.probe(customSandbox, False)
     result = __result_name(customSandbox.result)
     cpu = d['cpu_info'][0]
     mem = d['mem_info'][1]
 
-    if result is 'ML':
+    if result == 'OK':
+        return stdoutData, stderrData, d.get('exitcode', 0)
+    elif result == 'ML':
         raise MemoryLimitExceed(time=cpu,
             memory=mem,
-            stderr=open('error.txt', 'w'))
-    elif result is 'TL':
+            stderr=stderrData)
+    elif result == 'TL':
         raise TimeLimitExceed(time=cpu,
             memory=mem,
-            stderr=open('error.txt', 'w'))
-    elif result is 'OL':
+            stderr=stderrData)
+    elif result == 'OL':
         raise DiskLimitExceed(time=cpu,
             memory=mem,
-            stderr=open('error.txt', 'w'))
+            stderr=stderrData)
     elif result in ('RF', 'RT', 'AT', ):
         raise RuntimeError(time=cpu,
             memory=mem,
-            stderr=open('error.txt', 'w'))
+            stderr=stderrData)
     else:
         raise Exception(result)
 
@@ -75,21 +87,8 @@ class CustomSandbox(SandboxPolicy, Sandbox):
         i686 = set([3, 4, 19, 45, 54, 90, 91, 122, 125, 140, 163, 192, 197, 224, 243, 252, ]),
         x86_64 = set([0, 1, 2, 3, 5, 8, 9, 10, 11, 12, 13, 16, 21, 25, 39, 63, 72, 79, 107, 110, 158, 231, ]), )
 
-    sc_sequence = dict(
-        cpp = dict(
-            i686 = [],
-            x86_64 = [63, 12, 12, 158, 12, 12, 231]), )
-
     def __init__(self, *args, **kwds):
         self.sc_table = [0, ] * 1024
-        for scno in CustomSandbox.sc_safe[machine]:
-            self.sc_table[scno] = -1
-
-        for scno in self.sc_sequence[kwds['language']][machine]:
-            if self.sc_table[scno] >= 0:
-                self.sc_table[scno] += 1;
-
-        del kwds['language']
 
         kwds['policy'] = self
         SandboxPolicy.__init__(self)

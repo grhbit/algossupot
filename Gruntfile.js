@@ -16,7 +16,7 @@ module.exports = function (grunt) {
         config.capturingProcess[key] = {};
     });
     config.saveCapturingResult = {
-        options: { path: 'judge/scConfig.json' }
+        options: { path: 'judge/py/scConfig.json' }
     };
 
     config.capture = {};

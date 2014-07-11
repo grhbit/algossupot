@@ -7,6 +7,7 @@ import shutil
 
 import constants
 import compile
+import sandbox_start
 import problem
 
 RESULT_PATH = constants.RESULT_PATH
@@ -54,7 +55,7 @@ def main(args):
     problem_dir = ''
     working_dir = ''
     source_path = ''
-    language = 'C++'
+    language = ''
     output_path = ''
 
     myopts, args = getopt.getopt( sys.argv[1:], "", ["problem-dir=", "working-dir=", "source-path=", "language="] )
@@ -68,7 +69,6 @@ def main(args):
         elif opt == '--language':
             language = arg
 
-    #open('/Users/seonggwang/pyproc.log', "a").write(working_dir + '\n')
     os.chdir(working_dir)
     shutil.copy(source_path, './source.' + LANG_EXT_MAP.get(language))
     output_path = RUNNABLE_PATH;
@@ -81,6 +81,8 @@ def main(args):
         wait_input()
         sys.exit(os.EX_CANTCREAT);
 
+    out, err, returncode = sandbox_start.run(executable=output_path)
+
     print >> sys.stderr, 'Accepted'
     wait_input()
     return os.EX_OK
@@ -88,7 +90,6 @@ def main(args):
 if __name__ == "__main__":
     if len(sys.argv) < 2:
         sys.exit(os.EX_USAGE)
-
     try:
         sys.exit(main(sys.argv))
     except TimeLimitExceed, e:
@@ -117,6 +118,6 @@ if __name__ == "__main__":
         sys.exit(os.EX_OSERR)
     except Exception, e:
         print >> sys.stderr, 'Internal Error'
-        #open('/Users/seonggwang/pyproc.log', "a").write(e.message + '\n')
+        print e
         wait_input()
         sys.exit(os.EX_IOERR)

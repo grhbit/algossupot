@@ -1,6 +1,7 @@
-LANG_EXT_MAP = {
-    'C++': 'cpp'
-}
+LANG_EXT_MAP = dict(
+    cpp = 'cpp',
+    python = 'py',
+    ruby = 'rb')
 
 RUNNABLE_PATH = './Main.o'
 RESULT_PATH = './result.json'
