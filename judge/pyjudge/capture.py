@@ -39,22 +39,28 @@ try:
     import json
 
     # check platform type
-    system, machine = os.uname()[0], os.uname()[4]
-    if system not in ('Linux', ) or machine not in ('i686', 'x86_64', ):
+    SYSTEM, MACHINE = os.uname()[0], os.uname()[4]
+    if SYSTEM not in ('Linux', ) or MACHINE not in ('i686', 'x86_64', ):
         raise AssertionError("Unsupported platform type.\n")
 
     # check package availability / version
     import sandbox
     if not hasattr(sandbox, '__version__') or sandbox.__version__ < "0.3.3-rc2":
         raise AssertionError("Unsupported sandbox version.\n")
-    from sandbox import *
+    from sandbox import (SandboxPolicy,
+                         Sandbox,
+                         S_EVENT_SYSCALL,
+                         S_EVENT_SYSRET,
+                         S_ACTION_KILL,
+                         S_ACTION_CONT,
+                         S_RESULT_RF)
 
 except ImportError:
     sys.stderr.write("Required package(s) missing.\n")
     sys.exit(os.EX_UNAVAILABLE)
 
-except AssertionError, e:
-    sys.stderr.write(str(e))
+except AssertionError, inst:
+    sys.stderr.write(str(inst))
     sys.exit(os.EX_UNAVAILABLE)
 
 def main(args):
@@ -63,7 +69,10 @@ def main(args):
         'stdin': sys.stdin, # input to targeted program
         'stdout': sys.stdout, # output from targeted program
         'stderr': sys.stdout, # error from targeted program
-        'quota': dict(wallclock = 30000, cpu = 30000, memory = 88388608, disk = 1048576)
+        'quota': dict(wallclock=30000,
+                      cpu=30000,
+                      memory=88388608,
+                      disk=1048576)
     }
 
     # create a sandbox instance and execute till end
@@ -72,7 +81,7 @@ def main(args):
 
     print >> sys.stderr, json.dumps(msb.sc_table)
 
-class MiniSandbox(SandboxPolicy,Sandbox):
+class MiniSandbox(SandboxPolicy, Sandbox):
     sc_table = dict()
     sc_safe = dict(
         i686 = set([3, 4, 19, 45, 54, 90, 91, 122, 125, 140, 163, 192, 197, 224, 243, 252, ]),
@@ -87,11 +96,11 @@ class MiniSandbox(SandboxPolicy,Sandbox):
     def __call__(self, e, a):
         # handle SYSCALL/SYSRET events with local handlers
         if e.type in (S_EVENT_SYSCALL, S_EVENT_SYSRET):
-            if machine is 'x86_64' and e.ext0 is not 0:
+            if MACHINE is 'x86_64' and e.ext0 is not 0:
                 a.type, a.data = S_ACTION_KILL, S_RESULT_RF
                 return a
 
-            if e.type is 4 and e.data not in self.sc_safe[machine]:
+            if e.type is 4 and e.data not in self.sc_safe[MACHINE]:
                 self.sc_table[e.data] = self.sc_table.get(e.data, 0) + 1
 
             a.type = S_ACTION_CONT

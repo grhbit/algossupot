@@ -1,4 +1,4 @@
-#!/usr/bin/env ruby
+#!/home/seonggwang/.rbenv/shims/ruby
 
 def fiboR(n)
     return n if n < 2

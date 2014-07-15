@@ -14,7 +14,7 @@ Config.dir = {
 };
 
 Config.judge = {
-  script: path.join(rootDirectory, './judge/py/start.py')
+  script: path.join(rootDirectory, './judge/pyjudge/start.py')
 };
 
 Config.state = [
@@ -32,10 +32,14 @@ Config.state = [
 
 Config.lang = {
   list: [
-    'C++'
+    'cpp',
+    'python',
+    'ruby'
   ],
   ext: {
-    'C++': 'cpp'
+    'cpp': 'cpp',
+    'python': 'py',
+    'ruby': 'rb'
   }
 };
 

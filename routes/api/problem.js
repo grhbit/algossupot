@@ -97,7 +97,7 @@ exports.show = function (req, res) {
 
 exports.create = function (req, res) {
   var getAuth = function (cb) {
-    console.log(req.session);
+    console.log('problem.create session:' + req.session);
     if (req.session && req.session.auth) {
       cb(null, req.session.auth);
     } else {

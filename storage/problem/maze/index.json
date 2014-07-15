@@ -1,1 +1,5 @@
-{"timeLimit":"23213312","memoryLimit":"213231312","diskLimit":"23123"}
+{
+  "timeLimit": "10000",
+  "memoryLimit": "41943040",
+  "diskLimit": "1048576"
+}

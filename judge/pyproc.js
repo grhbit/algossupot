@@ -19,6 +19,7 @@ function PySubprocess(obj, callback, end) {
     stateStr,
     reply;
 
+  console.log(this.opt);
   _.forIn(this.opt, function (val, key) {
     args.push('--' + key + '=' + val);
   });

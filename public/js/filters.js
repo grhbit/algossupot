@@ -43,7 +43,6 @@ angular.module('myApp.filters', []).
       'Output Limit Exceed',
       'Time Limit Exceed',
       'Runtime Error',
-      'Abnormal Terminated',
       'Internal Error'
     ];
 
