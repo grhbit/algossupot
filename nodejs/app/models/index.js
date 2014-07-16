@@ -4,10 +4,10 @@ var fs = require('fs'),
   path = require('path'),
   Sequelize = require('sequelize'),
   lodash = require('lodash'),
-  sequelize = new Sequelize('algossupot', 'algossupotadmin', 'ncloudme', {
+  sequelize = new Sequelize('algossupot', 'admin', 'password', {
     dialect: 'mariadb',
-    host: '127.0.0.1',
-    port: 3306,
+    host: process.env.DB_PORT_3306_TCP_ADDR,
+    port: process.env.DB_PORT_3306_TCP_PORT,
     define: {
       charset: 'utf8',
       collate: 'utf8_general_ci'

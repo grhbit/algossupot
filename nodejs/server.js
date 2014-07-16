@@ -43,8 +43,8 @@ app.use(session({
 }));
 */
 app.use(session({ store: new RedisStore({
-  host: '127.0.0.1',
-  port: 6379,
+  host: process.env.SESSION_PORT_6379_TCP_ADDR || '0.0.0.0',
+  port: process.env.SESSION_PORT_6379_TCP_PORT || 6379,
   ttl: 60 * 30
 }), secret: 'SEKR37'}));
 
