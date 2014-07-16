@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TAG="mysql"
+TAG="mariadb"
 
 CONTAINER_ID=$(docker ps | grep $TAG | awk '{print $1}')
 
