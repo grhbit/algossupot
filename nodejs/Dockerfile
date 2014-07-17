@@ -9,6 +9,8 @@ RUN npm install -g grunt-cli && \
 
 ENV PORT 3000
 
+VOLUME ["/data/storage"]
+
 # In Development
 VOLUME ["/data/app"]
 

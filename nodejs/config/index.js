@@ -1,13 +1,14 @@
 var path = require('path'),
-  rootDirectory = path.dirname(module.parent.filename);
+  rootDirectory = path.dirname(module.parent.filename),
+  storageDirectory = '/data/storage';
 
 var Config = { };
 
 Config.dir = {
   root: rootDirectory,
-  storage: path.join(rootDirectory, './storage'),
-  problem: path.join(rootDirectory, './storage', './problem'),
-  submission: path.join(rootDirectory, './storage', './submission'),
+  storage: storageDirectory,
+  problem: path.join(storageDirectory, './problem'),
+  submission: path.join(storageDirectory, './submission'),
   app: path.join(rootDirectory, './app'),
   model: path.join(rootDirectory, './app/models'),
   view: path.join(rootDirectory, './app/views')
