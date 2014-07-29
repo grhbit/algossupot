@@ -1,0 +1,5 @@
+{
+  "queueName": "rpc_queue",
+  "sandboxDataDir": "./data",
+  "storageDir": "../nodejs/storage"
+}

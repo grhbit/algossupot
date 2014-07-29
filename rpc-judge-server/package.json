@@ -1,0 +1,13 @@
+{
+  "name": "amqp-client",
+  "version": "0.0.0",
+  "description": "",
+  "dependencies": {
+    "amqplib": "~0.2.0",
+    "async": "~0.9.0",
+    "sprintf-js": "0.0.7",
+    "tmp": "0.0.24",
+    "fs-extra": "~0.10.0"
+  },
+  "devDependencies": {}
+}
