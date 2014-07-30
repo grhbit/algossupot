@@ -1,0 +1,22 @@
+{
+  "metadata": {
+    "slug": "maze",
+    "name": "미로 찾기"
+  },
+  "limit": {
+    "time": 1000,
+    "memory": 31457280,
+    "disk": 1000
+  },
+  "mark": {
+    "in": {
+      "method": "fixed",
+      "path": "./stuffs/in.txt"
+    },
+    "out": {
+      "method": "fixed",
+      "path": "./stuffs/out.txt",
+      "diff-option": "simple"
+    }
+  }
+}
