@@ -48,7 +48,7 @@ module.exports = (function (config) {
         ].join(' '), options)
       }), child;
 
-      console.log('cmd', cmd);
+      // console.log(cmd);
 
       child = exec(cmd, function (error, stdout, stderr) {
         if (error !== null) {
@@ -59,8 +59,10 @@ module.exports = (function (config) {
           return cb(new Error('CompileError'), stderr);
         }
 
-        console.log('stdout: ' + stdout);
-        console.log('stderr: ' + stderr);
+        // console.log('stdout: ' + stdout);
+        if (stderr) {
+          console.log('stderr: ' + stderr);
+        }
 
         cb(null, JSON.parse(stdout));
       });
@@ -96,15 +98,17 @@ module.exports = (function (config) {
         })
       });
 
-      console.log(cmd);
+      // console.log(cmd);
 
       exec(cmd, function (error, stdout, stderr) {
         if (error !== null) {
           return cb(error);
         }
 
-        console.log('stdout: ' + stdout);
-        console.log('stderr: ' + stderr);
+        // console.log('stdout: ' + stdout);
+        if (stderr) {
+          console.log('stderr: ' + stderr);
+        }
 
         var result = JSON.parse(stdout);
         cb(result.state !== 'Passed' ? new Error(result.state) : null, result);
@@ -153,11 +157,7 @@ module.exports = (function (config) {
 
         if (method.hasOwnProperty(input.method)) {
           method[input.method](function (err) {
-            if (err) {
-              return cb(new Error('InternalError'), err);
-            }
-
-            cb(null);
+            cb(err);
           });
         } else {
           cb(new Error('Unknown input file generation method.'));
@@ -177,15 +177,17 @@ module.exports = (function (config) {
             memoryLimit: limit.memory,
             diskLimit: limit.disk
           })
-        ], function (err) {
-          cb(err);
+        ], function (err, result) {
+          cb(err, result);
         });
-      }, marking = function (cb) {
+      }, marking = function (runningResult, cb) {
         var output = problem.mark.out,
           diff = function (answerOutputPath, userOutputPath, diffMethod, cb) {
             var method = {
             };
-            cb(null, true);
+
+            runningResult.state = method ? 'Accepted' : 'WrongAnswer';
+            cb(null, runningResult);
           },
           method = {
             fixed: function (cb) {
@@ -223,12 +225,7 @@ module.exports = (function (config) {
                   async.apply(diff, answerPath, outputPath, diffOption)
                 ], function (err, result) {
                   fs.remove(answerScriptWorkDir);
-
-                  if (err !== null) {
-                    return cb(err);
-                  }
-
-                  cb(null, result);
+                  cb(err, result);
                 });
               });
             },
@@ -284,7 +281,7 @@ module.exports = (function (config) {
                     });
 
                     resultStream.on('end', function () {
-                      cb(null, (result === 'ok') ? 'Accepted' : 'WrongAnswer');
+                      cb(null, result === 'ok');
                     });
                   } catch (er) {
                     cb(er);
@@ -295,7 +292,14 @@ module.exports = (function (config) {
           };
 
         if (method.hasOwnProperty(output.method)) {
-          method[output.method](cb);
+          method[output.method](function (err, result) {
+            if (err) {
+              return cb(err);
+            }
+
+            runningResult.state = result ? 'Accepted' : 'WrongAnswer';
+            cb(null, runningResult);
+          });
         } else {
           cb(new Error('Unknown marking method.'));
         }
@@ -306,11 +310,7 @@ module.exports = (function (config) {
         running,
         marking,
       ], function (err, result) {
-        if (err) {
-          return callback(err);
-        }
-
-        callback(null, result);
+        callback(err, result);
       });
     });
 

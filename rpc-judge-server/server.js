@@ -16,14 +16,23 @@ rpcServer(open, function (msg, cb) {
     console.log(util.inspect(problem));
 
     sandbox(source, problem, function (err, result) {
-      console.error(err);
-      console.log(result);
+      if (result && ([
+          'CompileError',
+          'TimeLimitExceed',
+          'MemoryLimitExceed',
+          'OutputLimitExceed',
+          'RuntimeError',
+          'Accepted',
+          'WrongAnswer'
+        ].indexOf(result.state) !== -1)) {
+        return cb(null, new Buffer(JSON.stringify(result)));
+      }
+
+      cb(null, new Buffer(JSON.stringify({ state: 'InternalError' })));
     });
   } catch (err) {
-    cb(err);
+    cb(null, new Buffer(JSON.stringify({ state: 'InternalError' })));
   }
-
-  cb(null, new Buffer('100'), 'utf8');
 }, {
   queueName: "rpc_queue"
 });
