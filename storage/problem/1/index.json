@@ -1,11 +1,8 @@
 {
   "contents": {
-    "description": "marked-string",
+    "checkType": 1,
     "input": "input.txt",
     "output": "output.txt",
-    "sampleInput": "marked-string",
-    "sampleOutput": "marked-string",
-    "note": "marked-string",
     "timeLimit": 1000,
     "memoryLimit": 88388608,
     "diskLimit": 1048576

@@ -1,8 +1,19 @@
-div.problems
-  h2 문제 리스트
-  br
-  br
+br
+br
 
-  ul
-    li(ng-repeat='problem in problems')
-      a(href='/problems/{{problem.id}}') {{problem.name}}
+.panel.panel-default
+  .panel-heading
+    | 문제 목록
+  .panel-body.row
+    .col-sm-11
+    a(ng-href='/problem/create').col-sm-1.text-right
+      p create
+  table.table.table-hover
+    thead
+      tr.row
+        td.col-sm-3 식별자
+        td.col-sm-9 이름
+    tbody
+      tr.row(ng-repeat="problem in problems" ng-click='go(problem)')
+        td.col-sm-3 {{problem.slug}}
+        td.col-sm-9 {{problem.name}}

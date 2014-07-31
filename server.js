@@ -12,6 +12,7 @@ winston.setLevels(winston.config.syslog.levels);
 
 var models = global.models = require('./app/models');
 var async = global.async = require('async');
+var lodash = global._ = require('lodash');
 var routes = require('./routes');
 var api = routes.api;
 
@@ -36,10 +37,16 @@ app.use(morgan('dev'));
 app.use(bodyParser());
 app.use(methodOverride());
 app.use(cookieParser('S3CRE7'));
+/*
+app.use(session({
+  secret: 'session password',
+}));
+*/
 app.use(session({ store: new RedisStore({
   host: '127.0.0.1',
   port: 6379,
-}), secret: 'SEKR37', key: 'sid', cookie: { secure: true } }));
+  ttl: 60 * 30
+}), secret: 'SEKR37'}));
 
 app.set('port', process.env.PORT || 17239);
 app.set('views', path.join(__dirname, 'app/views'));
@@ -58,14 +65,15 @@ router.route('/auths/join')
 router.route('/auths/login')
   .post(api.auth.login);
 
+router.route('/auths/logout')
+  .post(api.auth.logout);
+
 router.route('/users')
-  .get(api.user.list)
-  .post(api.user.create);
+  .get(api.user.list);
 
 router.route('/user/:id')
   .get(api.user.show)
-  .put(api.user.update)
-  .delete(api.user.destroy);
+  .put(api.user.update);
 
 router.route('/problems')
   .get(api.problem.list)
@@ -73,12 +81,11 @@ router.route('/problems')
 
 router.route('/problem/:id')
   .get(api.problem.show)
-  .put(api.problem.update)
-  .delete(api.problem.destroy);
+  .put(api.problem.update);
 
 router.route('/submissions')
   .get(api.submission.list)
-  .post(api.submission.create);
+  .post(api.auth.checkAuth, api.submission.create);
 
 router.route('/submission/:id')
   .get(api.submission.show)
@@ -87,7 +94,7 @@ router.route('/submission/:id')
 
 router.route('*')
   .all(function (req, res) {
-    res.send(400, { error: 'Bad Request' });
+    res.json(400, 'Bad Request');
   });
 
 app.use('/api', router);
@@ -113,11 +120,17 @@ app.route('/problems/list')
 app.route('/problems/show')
   .get(routes.problem.show);
 
+app.route('/problems/create')
+  .get(routes.problem.create);
+
 app.route('/submissions/list')
   .get(routes.submission.list);
 
 app.route('/submissions/show')
   .get(routes.submission.show);
+
+app.route('/submissions/create')
+  .get(routes.submission.create);
 
 app.route('*')
   .all(routes.index);

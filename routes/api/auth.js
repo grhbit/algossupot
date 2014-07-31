@@ -4,6 +4,22 @@
 
 var Auth = models.Auth;
 
+exports.checkAuth = function (req, res, next) {
+  if (req.session && req.session.auth) {
+    next();
+  } else {
+    res.json(500, (new Error('checkAuth failed')).toString());
+  }
+};
+
+exports.checkAdminAuth = function (req, res, next) {
+  if (req.session && req.session.auth && (req.session.auth.isAdmin === true)) {
+    next();
+  } else {
+    res.json(500, (new Error('checkAdminAuth failed')).toString());
+  }
+};
+
 exports.join = function (req, res, next) {
   var signUpForm = {
     username: req.body.username,
@@ -13,7 +29,7 @@ exports.join = function (req, res, next) {
   };
   Auth.signUp(signUpForm, function (err, auth) {
     if (err) {
-      return res.json(500, { error: err.toString() });
+      return res.json(500, err.toString());
     }
 
     auth.password = undefined;
@@ -30,15 +46,24 @@ exports.login = function (req, res, next) {
 
   Auth.signIn(signInForm, function (err, auth) {
     if (err) {
-      return res.json(500, { error: err.toString() });
+      return res.json(500, err.toString());
     }
+
 
     auth.password = undefined;
     delete auth.password;
+
+    req.session.auth = auth;
+
     return res.json(auth);
   });
 };
 
-exports.resign = function (req, res, next) {
-
+exports.logout = function (req, res, next) {
+  if (req.session) {
+    req.session.destroy();
+    res.json(200);
+  } else {
+    res.json(500, new Error('Not Found Session.').toString());
+  }
 };

@@ -12,8 +12,11 @@ block content
         a.navbar-brand(href='/') Algossupot
 
       ul.nav.navbar-top-links.navbar-right
-        button(type='button' onclick='location.href="/join"').btn.btn-primary Sign up
-        button(type='button' onclick='location.href="/login"').btn.btn-default Sign in
+        span(ng-show='isAuthentication()')
+          button(type='button' ng-click='signOut()').btn.btn-primary Sign out
+        span(ng-hide='isAuthentication()')
+          button(type='button' onclick='location.href="/join"').btn.btn-primary Sign up
+          button(type='button' onclick='location.href="/login"').btn.btn-default Sign in
 
       div(role='navigation').navbar-default.navbar-static-side
         div.sidebar-collapse

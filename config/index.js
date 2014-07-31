@@ -6,24 +6,15 @@ var Config = { };
 Config.dir = {
   root: rootDirectory,
   storage: path.join(rootDirectory, './storage'),
+  problem: path.join(rootDirectory, './storage', './problem'),
   submission: path.join(rootDirectory, './storage', './submission'),
   app: path.join(rootDirectory, './app'),
-  controller: path.join(rootDirectory, './app/controllers'),
   model: path.join(rootDirectory, './app/models'),
   view: path.join(rootDirectory, './app/views')
 };
 
-Config.db = {
-  tableName: {
-    auth: 'auth',
-    user: 'user',
-    problem: 'problem',
-    submission: 'submission'
-  }
-};
-
 Config.judge = {
-  script: path.join(rootDirectory, './judge/index.py')
+  script: path.join(rootDirectory, './judge/pyjudge/start.py')
 };
 
 Config.state = [
@@ -36,16 +27,19 @@ Config.state = [
   'Output Limit Exceed',
   'Time Limit Exceed',
   'Runtime Error',
-  'Abnormal Terminated',
   'Internal Error'
 ];
 
 Config.lang = {
   list: [
-    'C++'
+    'cpp',
+    'python',
+    'ruby'
   ],
   ext: {
-    'C++': 'cpp'
+    'cpp': 'cpp',
+    'python': 'py',
+    'ruby': 'rb'
   }
 };
 

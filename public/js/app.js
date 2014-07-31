@@ -23,7 +23,7 @@ angular.module('myApp', [
         templateUrl: '/users/list',
         controller: 'UserListCtrl'
       }).
-      when('/users/:id', {
+      when('/user/:id', {
         templateUrl: '/users/show',
         controller: 'UserShowCtrl'
       }).
@@ -31,15 +31,23 @@ angular.module('myApp', [
         templateUrl: '/problems/list',
         controller: 'ProblemListCtrl'
       }).
-      when('/problems/:id', {
+      when('/problem/create', {
+        templateUrl: '/problems/create',
+        controller: 'ProblemCreateCtrl'
+      }).
+      when('/problem/:id', {
         templateUrl: '/problems/show',
         controller: 'ProblemShowCtrl'
+      }).
+      when('/problem/:id/submit', {
+        templateUrl: '/submissions/create',
+        controller: 'SubmissionCreateCtrl'
       }).
       when('/submissions', {
         templateUrl: '/submissions/list',
         controller: 'SubmissionListCtrl'
       }).
-      when('/submissions/:id', {
+      when('/submission/:id', {
         templateUrl: '/submissions/show',
         controller: 'SubmissionShowCtrl'
       }).

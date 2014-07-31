@@ -2,23 +2,27 @@ h2 회원 가입
 br
 br
 
-div(ng-controller='AuthJoinCtrl')
-  form(role='form')
-    .form-group
-      p 아이디:
-      input.form-control(type='text', ng-model='user.name')
-      br
-      p 닉네임:
-      input.form-control(type='text', ng-model='user.nickname')
-      br
-      p 이메일:
-      input.form-control(type='email', ng-model='user.email')
-      br
-      p 비밀번호:
-      input.form-control(type='password', ng-model='user.password')
-      br
-      p 비밀번호 재확인:
-      input.form-control(type='password', ng-model='user.password_retype')
-      br
+.panel.panel-default(ng-controller='AuthJoinCtrl')
+  .panel-heading
+    | 회원 가입
+  .panel-body
+    form(role='form')
+      .form-group
+        label(for='') 아이디
+        input.form-control(type='text' ng-model='user.name')
+      .form-group
+        label(for='') 닉네임
+        input.form-control(type='text' ng-model='user.nickname')
+      .form-group
+        label(for='') 이메일
+        input.form-control(type='email' ng-model='user.email')
+      .form-group
+        label(for='') 비밀번호
+        input.form-control(type='password' ng-model='user.password')
+      .form-group
+        label(for='') 비밀번호 재확인
+        input.form-control(type='password' ng-model='user.password_retype')
+      button.btn.btn-primary(ng-click="join()") Submit
 
-    button.btn.btn-primary(ng-click='join()') Submit
+  .panel-footer.panel-info
+    span {{user}}

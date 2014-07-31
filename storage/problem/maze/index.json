@@ -1,0 +1,5 @@
+{
+  "timeLimit": "10000",
+  "memoryLimit": "41943040",
+  "diskLimit": "1048576"
+}

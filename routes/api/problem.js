@@ -69,7 +69,7 @@ exports.list = function (req, res) {
       res.json(problems);
     })
     .error(function (err) {
-      res.json(500, { error: err.toString() });
+      res.json(500, err.toString());
     });
 };
 
@@ -83,17 +83,44 @@ exports.show = function (req, res) {
   findById(id, function (err, problem) {
     loadContents(problem, function (err, contents) {
       if (err) {
-        return res.json(500, { error: err.toString() });
+        return res.json(500, err);
       }
 
-      contents.problem_content = marked(String(contents.problem_content));
-      return res.json({ problem: problem, contents: contents });
+      contents.description = marked(String(contents.description));
+      res.json({
+        problem: problem,
+        contents: contents
+      });
     });
   });
 };
 
 exports.create = function (req, res) {
-  return undefined;
+  var getAuth = function (cb) {
+    console.log('problem.create session:' + req.session);
+    if (req.session && req.session.auth) {
+      cb(null, req.session.auth);
+    } else {
+      cb(new Error('Not Found Auth'));
+    }
+  };
+
+  getAuth(function (err, auth) {
+    if (err) {
+      return res.json(500, err);
+    }
+
+    Problem.push({
+      problem: req.body.problem,
+      userId: auth.UserId
+    }, function (err) {
+      if (err) {
+        console.error(require('util').inspect(err));
+        return res.json(500, err);
+      }
+      res.json(200);
+    });
+  });
 };
 
 exports.update = function (req, res) {
@@ -105,10 +132,10 @@ exports.update = function (req, res) {
     async.apply(updateProblem, data)
   ], function (err) {
     if (err) {
-      return res.json(500, { error: err.toString() });
+      return res.json(500, err);
     }
 
-    res.json({});
+    res.json(200);
   });
 };
 
@@ -120,7 +147,7 @@ exports.destroy = function (req, res) {
     destroyProblem
   ], function (err) {
     if (err) {
-      return res.json(500, { error: err.toString() });
+      return res.json(500, err.toString());
     }
 
     return res.json({});

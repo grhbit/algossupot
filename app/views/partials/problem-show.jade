@@ -1,3 +1,11 @@
-h1 {{problem.name}}
-hr
-span(ng-bind-html='problemContents')
+br
+br
+.panel.panel-default(ng-controller='ProblemShowCtrl')
+  .panel-heading
+    h1 {{problem.name}}
+  .panel-body
+    span(ng-bind-html="trustDescription")
+
+    span(ng-if='problem')
+      a(ng-href='/problem/{{problem.id}}/submit')
+        button.btn.btn-primary Submit
