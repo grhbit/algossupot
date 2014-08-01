@@ -22,9 +22,10 @@
     "marked": "*",
     "mkdirp": "*",
     "sequelize": "~1.7.2",
-    "mariasql": "~0.1.20",
     "winston": "*",
-    "temporary": "0.0.8"
+    "temporary": "0.0.8",
+    "uuid": "~1.4.1",
+    "amqplib": "~0.2.0"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

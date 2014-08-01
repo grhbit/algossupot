@@ -5,7 +5,7 @@ var fs = require('fs');
 var path = require('path');
 var util = require('util');
 var mkdirp = require('mkdirp');
-var PyProc = require('../../judge').PyProc;
+var judgeRpcClient = require('../../judge');
 
 var _Submission, ClassMethods = {}, InstanceMethods = {};
 
@@ -177,81 +177,79 @@ InstanceMethods.loadErrorMessage = function (callback) {
 };
 
 InstanceMethods.updateState = function (state, callback) {
-  var self = this, iState = 0;
-
-  if (typeof state === 'string') {
-    iState = config.state.indexOf(state);
-  } else if (typeof state === 'number') {
-    iState = state;
-  }
-
-  if (iState === -1) {
-    return callback(new Error('submission invalid state'));
-  }
-
-  self.state = iState;
+  var self = this;
   self.updateAttributes({
-    state: iState
+    state: state
   }).
     success(callback).
     error(callback);
 };
 
 InstanceMethods.judge = function () {
-  var self = this;
-  var pyproc = function (problem) {
-    var pypy = new PyProc({
-      'problem-dir': (self.problem || problem).getPath(),
-      'source-path': self.getSourceCodePath(),
-      'language': self.language
-    }, function (state, cb) {
-      console.log(state);
-      self.updateState(state, function () {
-        if (state === 'Compile Error') {
-          var dstPath = self.getErrorPath();
-          var srcPath = path.join(pypy.opt['working-dir'], './compile.err');
-          fs.writeFileSync(dstPath, fs.readFileSync(srcPath));
+  var self = this,
+    source = {
+      path: self.getSourceCodePath(),
+      language: self.language
+    },
+    getProblem = function (cb) {
+      models.Problem.find(self.ProblemId).
+        success(function (problem) {
+          cb(null, problem);
+        }).
+        error(function (err) {
+          cb(err);
+        });
+    },
+    readContents = function (problem, cb) {
+      problem.loadContents(function (err, contents) {
+        if (err) {
+          return cb(err);
         }
 
-        cb();
+        cb(null, contents.index);
       });
-    }, function (code) {
-      console.log('code: ' + code);
-    });
-  };
+    },
+    sendToJudgeMsg = function (problem, cb) {
+      judgeRpcClient({
+        source: source,
+        problem: problem
+      }, cb);
+    };
 
-  if (!self.problem) {
-    self.getProblem().
-      success(function (problem) {
-        pyproc(problem);
-      }).
-      error(function (err) {
-        self.updateState('Internal Error');
-      });
-  }
+  async.waterfall([
+    getProblem,
+    readContents,
+    sendToJudgeMsg
+  ], function (err, reply) {
+    if (err) {
+      console.error(err);
+      return err;
+    }
+
+    console.log(reply);
+  });
 };
 
 module.exports = function (sequelize, DataTypes) {
   var Submission = sequelize.define('Submission', {
     language: {
-      type: DataTypes.STRING,
+      type: DataTypes.STRING(32),
       notNull: true,
       isIn: [config.lang.list]
     },
-    codeLength: {
-      type: DataTypes.INTEGER,
-      notNull: true,
-      min: 0
-    },
     state: {
-      type: DataTypes.INTEGER,
+      type: DataTypes.STRING(32),
       notNull: true,
-      defaultValue: config.state.indexOf('Pending')
+      isIn: [config.state],
+      defaultValue: config.state[0]
     },
-    executionTime: {
-      type: DataTypes.INTEGER,
-      min: 0
-    }
+    codeLength: {
+      type: DataTypes.INTEGER.UNSIGNED,
+      notNull: true
+    },
+    timeUsage: DataTypes.INTEGER.UNSIGNED,
+    memoryUsage: DataTypes.INTEGER.UNSIGNED,
+    diskUsage: DataTypes.INTEGER.UNSIGNED
   }, {
     associate: function (models) {
       Submission

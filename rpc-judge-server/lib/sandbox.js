@@ -59,10 +59,12 @@ module.exports = (function (config) {
           return cb(new Error('CompileError'), stderr);
         }
 
-        // console.log('stdout: ' + stdout);
+        /*
+        console.log('stdout: ' + stdout);
         if (stderr) {
           console.log('stderr: ' + stderr);
         }
+        */
 
         cb(null, JSON.parse(stdout));
       });

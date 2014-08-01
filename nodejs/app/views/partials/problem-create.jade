@@ -5,42 +5,80 @@ br
     | 문제 생성
   .panel-body
     form(role='form')
-      .form-group
-        label(for='problem-slug') 식별자
-        input.form-control(type='text', ng-model='problem.slug')#problem-slug
-      .form-group
-        label(for='problem-name') 이름
-        input.form-control(type='text', ng-model='problem.name')#problem-name
-      .form-group
-        label(for='problem-description') 설명
-        textarea(ng-model='problem.description' rows=10).form-control#problem-description
       .panel.panel-default.panel-collapse
         .panel-heading
-          | 채점
+          | 기본 정보
+        .panel-body.panel-collapse
+          .form-group
+            label(for='problem-slug') 식별자
+            input.form-control(type='text', ng-model='problem.metadata.slug')#problem-slug
+          .form-group
+            label(for='problem-name') 이름
+            input.form-control(type='text', ng-model='problem.metadata.name')#problem-name
+      .panel.panel-default.panel-collapse
+        .panel-heading
+          | 제한
         .panel-body.panel-collapse
           .row
             .form-group.col-sm-4
               label(for='problem-timeLimit') 시간 제한 (ms)
-              input.form-control(type='text', ng-model='problem.timeLimit')#problem-timeLimit
+              input.form-control(type='text', ng-model='problem.limit.time')#problem-timeLimit
               help
             .form-group.col-sm-4
               label(for='problem-memoryLimit') 메모리 제한 (byte)
-              input.form-control(type='text', ng-model='problem.memoryLimit')#problem-memoryLimit
+              input.form-control(type='text', ng-model='problem.limit.memory')#problem-memoryLimit
             .form-group.col-sm-4
               label(for='problem-diskLimit') 출력 제한 (byte)
-              input.form-control(type='text', ng-model='problem.diskLimit')#problem-diskLimit
+              input.form-control(type='text', ng-model='problem.limit.disk')#problem-diskLimit
+      .panel.panel-default.panel-collapse
+        .panel-heading
+          | 채점
+        .panel-body
           .row
-            .form-group.col-sm-4
-              label(for='problem-judgeModule') 채점방식
-              select(ng-model='problem.judgeModule').form-control#problem-judgeModule
-                option(value='1') 1
-                option(value='2') 2
-                option(value='3') 3
-
-            span(ng-if='problem.judgeModule == 3')
-              .form-group.col-sm-4
-                label(for='problem-judgeScript') 채점 스크립트
-                input(ng-model='problem.judgeScript').form-control#problem-judgeScript
+            .col-sm-6
+              .panel.panel-default.panel-collapse
+                .panel-heading
+                  | 입력
+                .panel-body
+                  .row
+                    .form-group.col-sm-12
+                      label(for='problem-mark-in-method') 방식
+                      select(ng-model='problem.mark.in.method' ng-init="problem.mark.in.method = 'fixed'").form-control#problem-mark-in-method
+                        option(value='fixed') fixed
+                        option(value='script') script
+                  .row
+                    span(ng-if='problem.mark.in.method === "script"')
+                        .form-group.col-sm-12
+                          label(for='problem-in-script-language') 언어
+                          input(ng-model='problem.mark.in.language').form-control#problem-in-script-language
+                  .row
+                    .form-group.col-sm-12
+                      label(for='mark-in-path')
+                      textarea(ng-model='problem.mark.in.path').form-control
+            .col-sm-6
+              .panel.panel-default.panel-collapse
+                .panel-heading
+                  | 출력
+                .panel-body
+                  .row
+                    .form-group.col-sm-12
+                      label(for='problem-mark-out-method') 방식
+                      select(ng-model='problem.mark.out.method' ng-init="problem.mark.in.method = 'fixed'").form-control#problem-mark-in-method
+                        option(value='fixed') fixed
+                        option(value='answer-script') answer script
+                        option(value='marking-script') marking script
+                  .row
+                    span(ng-if='problem.mark.out.method === "script"')
+                        .form-group.col-sm-12
+                          label(for='problem-out-script-language') 언어
+                          input(ng-model='problem.mark.out.language').form-control#problem-out-script-language
+                  .row
+                    .form-group.col-sm-12
+                      label(for='mark-out-path')
+                      textarea(ng-model='problem.mark.out.path').form-control
+      .form-group
+        label(for='problem-description') 설명
+        textarea(ng-model='problem.description' rows=10).form-control#problem-description
 
       button.btn.btn-primary(ng-click='submit()') Submit
 

@@ -21,14 +21,13 @@ Config.judge = {
 Config.state = [
   'Pending',
   'Accepted',
-  'Wrong Answer',
-  'Compiling',
-  'Compile Error',
-  'Memory Limit Exceed',
-  'Output Limit Exceed',
-  'Time Limit Exceed',
-  'Runtime Error',
-  'Internal Error'
+  'WrongAnswer',
+  'CompileError',
+  'MemoryLimitExceed',
+  'OutputLimitExceed',
+  'TimeLimitExceed',
+  'RuntimeError',
+  'InternalError'
 ];
 
 Config.lang = {
