@@ -9,20 +9,13 @@ var open = require('amqplib').connect('amqp://localhost'),
 rpcServer(open, function (msg, cb) {
   try {
     var obj = JSON.parse(msg.content.toString('utf8')),
-      source = obj.source,
+      submission = obj.submission,
       problem = obj.problem;
 
-    if (!(source && source.path && source.language) ||
-        !(problem && problem.metadata && problem.limit &&
-          problem.mark)) {
-      console.error('Invalid message');
-      throw new Error('Invalid message');
-    }
-
-    console.log(source);
+    console.log(submission);
     console.log(problem);
 
-    sandbox(source, problem, function (err, result) {
+    sandbox(submission, problem, function (err, result) {
       if (result && ([
           'CompileError',
           'TimeLimitExceed',

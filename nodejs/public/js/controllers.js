@@ -143,7 +143,7 @@ angular.module('myApp.controllers', []).
             $window.history.back();
           }).
           error(function (data) {
-            alert(JSON.stringify(data));
+            alert(JSON.stringify(data.toString()));
           });
       };
 

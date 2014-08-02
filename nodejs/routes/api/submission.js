@@ -1,4 +1,4 @@
-/*jslint node: true, eqeq: true, vars: true */
+/*jslint node: true, eqeq: true */
 /*global async, models, winston*/
 'use strict';
 
@@ -6,152 +6,139 @@ var User = models.User;
 var Problem = models.Problem;
 var Submission = models.Submission;
 
-var findById = function (id, callback) {
-  Submission.find(id)
-    .success(function (submission) {
-      callback(null, submission);
-    })
-    .error(function (err) {
-      callback(err);
-    });
-};
-
-var updateSubmission = function (data, submission, callback) {
-  submission.updateAttributes(data)
-    .success(function () {
-      callback(null);
-    })
-    .error(function (err) {
-      callback(err);
-    });
-};
-
-var destroySubmission = function (submission, callback) {
-  if (!submission) {
-    return callback(new Error(''));
-  }
-
-  submission.destroy()
-    .success(function () {
-      callback(null);
-    })
-    .error(function (err) {
-      callback(err);
-    });
-};
-
-exports.list = function (req, res) {
-  Submission.all()
-    .success(function (submissions) {
-      res.json(submissions);
-    })
-    .error(function (err) {
-      res.json(500, err.toString());
-    });
-};
-
-exports.new = function (req, res) {
-  return undefined;
-};
-
-exports.show = function (req, res) {
-  var id = req.params.id;
-
-  findById(id, function (err, submission) {
-    if (err) {
-      return res.json(500, err.toString());
-    }
-
-    async.series({
-      sourceCode: function (cb) { submission.loadSourceCode(cb); },
-      errorMessage: function (cb) { submission.loadErrorMessage(cb); }
-    }, function (err, results) {
-      if (results.sourceCode) {
-        submission.values.sourceCode = String(results.sourceCode, 'utf8');
-      }
-      if (results.errorMessage) {
-        submission.values.errorMessage = String(results.errorMessage, 'utf8');
-      }
-
-      res.json(submission);
-    });
-
-  });
-};
-
-exports.create = function (req, res) {
-  var findProblem = function (cb) {
-    if (req.body && req.body.problemId) {
-      return cb(null, req.body.problemId);
-    }
-    return cb(new Error('Bad Request'));
-  };
-  var findUser = function (cb) {
-    if (req.session && req.session.auth && req.session.auth.UserId) {
-      return cb(null, req.session.auth.UserId);
-    }
-    return cb(new Error('Not found user'));
-  };
-  var submitSourceCode = function (results, cb) {
-    if (req.body && req.body.submission.language && req.body.submission.sourceCode) {
-      Submission.push({
-        language: req.body.submission.language,
-        sourceCode: req.body.submission.sourceCode
-      }, results.userId, results.problemId, function (err) {
-        if (err) {
-          return cb(err);
+var findSubmissionById = function (id, callback) {
+  if (id) {
+    Submission.find(id).
+      success(function (submission) {
+        if (submission) {
+          return callback(null, submission);
         }
-        cb(null);
+        callback(new Error('Not found submission:' + id));
+      }).error(callback);
+  } else {
+    callback(new Error('Bad Request'));
+  }
+};
+
+exports.list = (function () {
+  return function (req, res) {
+    Submission.all()
+      .success(function (submissions) {
+        res.json(submissions);
+      })
+      .error(function (err) {
+        res.json(500, err.toString());
       });
+  };
+}());
+
+exports.show = (function () {
+  return function (req, res) {
+    if (!(req.params && req.params.id)) {
+      return res.json(500, (new Error('Bad Request')).toString());
+    }
+
+    var id = req.params.id;
+
+    findSubmissionById(id, function (err, submission) {
+      async.series({
+        submission: function (cb) { cb(err, submission); },
+        sourceCode: function (cb) { submission.loadSourceCode(cb); },
+        errorMessage: function (cb) {
+          submission.loadErrorMessage(function (err, result) {
+            cb(null, result);
+          });
+        }
+      }, function (err, results) {
+        if (err) {
+          console.log(err.toString());
+          return res.json(500, err.toString());
+        }
+
+        results.sourceCode = String(results.sourceCode || '');
+        results.errorMessage = String(results.errorMessage || '');
+
+        res.json(results);
+      });
+    });
+  };
+}());
+
+exports.create = (function () {
+  var findProblem = function (req, cb) {
+    if (req.body && req.body.problemId) {
+      var problemId = req.body.problemId;
+      Problem.find(problemId).
+        success(function (problem) {
+          if (problem) {
+            return cb(null, problem);
+          }
+          cb(new Error('Not found problem:' + problemId));
+        }).error(cb);
     } else {
       cb(new Error('Bad Request'));
     }
+  }, findUser = function (req, cb) {
+    if (req.session && req.session.auth && req.session.auth.UserId) {
+      var userId = req.session.auth.UserId;
+      User.find(userId).
+        success(function (user) {
+          if (user) {
+            return cb(null, user);
+          }
+          cb(new Error('Not found user :' + userId));
+        }).error(cb);
+    } else {
+      cb(new Error('Bad Request'));
+    }
+  }, getSubmissionData = function (req, cb) {
+    if (req.body && req.body.submission &&
+        req.body.submission.language && req.body.submission.sourceCode) {
+      return cb(null, {
+        language: req.body.submission.language,
+        sourceCode: req.body.submission.sourceCode
+      });
+    }
+    cb(new Error('Bad Request'));
   };
 
-  async.series({
-    userId: findUser,
-    problemId: findProblem
-  }, function (err, results) {
-    if (err) {
-      return res.json(500, err);
-    }
+  return function (req, res) {
+    async.series({
+      user: async.apply(findUser, req),
+      problem: async.apply(findProblem, req),
+      submissionData: async.apply(getSubmissionData, req)
+    }, function (err, results) {
+      if (err) {
+        return res.json(500, err.toString());
+      }
 
-    submitSourceCode(results, function (err) {
+      Submission.push(results, function (err) {
+        if (err) {
+          return res.json(500, err.toString());
+        }
+        res.send(200);
+      });
+    });
+  };
+}());
+
+exports.destroy = (function () {
+  var destroySubmission = function (submission, cb) {
+    //TODO: removes (source code, error files).
+    submission.destroy().complete(cb);
+  };
+
+  return function (req, res) {
+    var id = req.params.id;
+
+    async.waterfall([
+      async.apply(findSubmissionById, id),
+      destroySubmission
+    ], function (err) {
       if (err) {
         return res.json(500, err.toString());
       }
       res.send(200);
     });
-  });
-};
-
-exports.update = function (req, res) {
-  var id = req.params.id;
-  var data = {};
-
-  async.waterfall([
-    async.apply(findById, id),
-    async.apply(updateSubmission, data)
-  ], function (err) {
-    if (err) {
-      return res.json(500, err);
-    }
-
-    res.json({});
-  });
-};
-
-exports.destroy = function (req, res) {
-  var id = req.params.id;
-
-  async.waterfall([
-    async.apply(findById, id),
-    destroySubmission
-  ], function (err) {
-    if (err) {
-      return res.json(500, err);
-    }
-
-    return res.json({});
-  });
-};
+  };
+}());

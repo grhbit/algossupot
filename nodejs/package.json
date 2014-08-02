@@ -25,7 +25,8 @@
     "winston": "*",
     "temporary": "0.0.8",
     "uuid": "~1.4.1",
-    "amqplib": "~0.2.0"
+    "amqplib": "~0.2.0",
+    "fs-extra": "~0.10.0"
   },
   "devDependencies": {
     "grunt": "~0.4.5",

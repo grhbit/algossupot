@@ -21,15 +21,13 @@ var command = [
 ].join(' ');
 
 module.exports = (function (config) {
-
   config = config || {
     "queueName": "rpc_queue",
     "sandboxDataDir": "./data",
     "storageDir": "../nodejs/storage"
   };
 
-
-  return function (source, problem, callback) {
+  return function (submission, problem, callback) {
     var mkstemps = function (cb) {
       tmp.dir({
         template: join(config.sandboxDataDir, 'sandbox-XXXXXXX'),
@@ -42,7 +40,7 @@ module.exports = (function (config) {
         datadir: datadir,
         command: '/opt/compile.py',
         argument: sprintf([
-          '--lang=%(language)s',
+          '--language=%(language)s',
           '--source=%(source)s',
           '--output=%(output)s'
         ].join(' '), options)
@@ -170,7 +168,7 @@ module.exports = (function (config) {
         async.waterfall([
           async.apply(fs.copy, source.path, join(datadir, basename(source.path))),
           async.apply(compile, datadir, {
-            language: source.language,
+            language: submission.language,
             source: join('/data', basename(source.path)),
             output: '/data/O.o'
           }),

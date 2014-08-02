@@ -84,12 +84,12 @@ def main(argv):
     language = source = output = None
 
     opts, args = getopt.getopt(argv[1:], 'l:s:o:', [
-        'lang=',
+        'language=',
         'source=',
         'output='])
 
     for opt, arg in opts:
-        if opt in ('-l', '--lang'):
+        if opt in ('-l', '--language'):
             language = arg
         if opt in ('-s', '--source'):
             source = arg

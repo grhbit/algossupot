@@ -1,5 +1,5 @@
 /*jslint node: true, eqeq: true, vars: true */
-/*global async, models, winston*/
+/*global _, async, models, winston*/
 'use strict';
 
 var marked = require('marked');
@@ -16,38 +16,18 @@ marked.setOptions({
   smartypants: false
 });
 
-var findById = function (id, callback) {
-  Problem.find(id)
-    .success(function (problem) {
-      callback(null, problem);
-    })
-    .error(function (err) {
-      callback(err);
-    });
-};
-
-var updateProblem = function (data, problem, callback) {
-  problem.updateAttributes(data)
-    .success(function () {
-      callback(null);
-    })
-    .error(function (err) {
-      callback(err);
-    });
-};
-
-var destroyProblem = function (problem, callback) {
-  if (!problem) {
-    return callback(new Error(''));
+var findProblemById = function (id, callback) {
+  if (id) {
+    Problem.find(id).
+      success(function (problem) {
+        if (problem) {
+          return callback(null, problem);
+        }
+        callback(new Error('Not found problem:' + id));
+      }).error(callback);
+  } else {
+    callback(new Error('Bad Request'));
   }
-
-  problem.destroy()
-    .success(function () {
-      callback(null);
-    })
-    .error(function (err) {
-      callback(err);
-    });
 };
 
 var loadContents = function (problem, callback) {
@@ -63,24 +43,22 @@ var loadContents = function (problem, callback) {
   });
 };
 
-exports.list = function (req, res) {
-  Problem.all()
-    .success(function (problems) {
-      res.json(problems);
-    })
-    .error(function (err) {
-      res.json(500, err.toString());
-    });
-};
-
-exports.new = function (req, res) {
-  return undefined;
-};
+exports.list = (function () {
+  return function (req, res) {
+    Problem.all().
+      success(function (problems) {
+        res.json(problems);
+      }).
+      error(function (err) {
+        res.json(500, err.toString());
+      });
+  };
+}());
 
 exports.show = function (req, res) {
   var id = req.params.id;
 
-  findById(id, function (err, problem) {
+  findProblemById(id, function (err, problem) {
     loadContents(problem, function (err, contents) {
       if (err) {
         return res.json(500, err);
@@ -95,61 +73,85 @@ exports.show = function (req, res) {
   });
 };
 
-exports.create = function (req, res) {
-  var getAuth = function (cb) {
-    console.log('problem.create session:' + req.session);
-    if (req.session && req.session.auth) {
-      cb(null, req.session.auth);
-    } else {
-      cb(new Error('Not Found Auth'));
-    }
+exports.create = (function () {
+  var User = models.User,
+    findUser = function (req, cb) {
+      if (req.session && req.session.auth && req.session.auth.UserId) {
+        var userId = req.session.auth.UserId;
+        User.find(userId)
+          .success(function (user) {
+            if (user) {
+              return cb(null, user);
+            }
+            cb(new Error('Not found user:' + userId));
+          })
+          .error(cb);
+      } else {
+        cb(new Error('Bad Request'));
+      }
+    },
+    getProblemData = function (req, cb) {
+      if (req.body && req.body.problem) {
+        var problem = req.body.problem;
+        cb(null, problem);
+      } else {
+        cb(new Error('Bad Request'));
+      }
+    };
+
+  return function (req, res) {
+    async.series({
+      user: async.apply(findUser, req),
+      problemData: async.apply(getProblemData, req)
+    }, function (err, results) {
+      if (err) {
+        return res.json(500, err.toString());
+      }
+
+      Problem.push(results, function (err) {
+        if (err) {
+          return res.json(500, err.toString());
+        }
+        res.send(200);
+      });
+    });
+  };
+}());
+
+exports.update = (function () {
+  return function (req, res) {
+    var id = req.params.id;
+
+    findProblemById(id, function (err, problem) {
+      if (err) {
+        return res.json(500, err.toString());
+      }
+
+      //TODO: update problem index and description files.
+
+      res.send(200);
+    });
+  };
+}());
+
+exports.destroy = (function () {
+  var destroyProblem = function (problem, cb) {
+    //TODO: removes problem folder.
+    problem.destroy().complete(cb);
   };
 
-  getAuth(function (err, auth) {
-    if (err) {
-      return res.json(500, err);
-    }
+  return function (req, res) {
+    var id = req.params.id;
 
-    Problem.push({
-      problem: req.body.problem,
-      userId: auth.UserId
-    }, function (err) {
+    async.waterfall([
+      async.apply(findProblemById, id),
+      destroyProblem
+    ], function (err) {
       if (err) {
-        console.error(require('util').inspect(err));
-        return res.json(500, err);
+        return res.json(500, err.toString());
       }
-      res.json(200);
+
+      return res.send(200);
     });
-  });
-};
-
-exports.update = function (req, res) {
-  var id = req.params.id;
-  var data = {};
-
-  async.waterfall([
-    async.apply(findById, id),
-    async.apply(updateProblem, data)
-  ], function (err) {
-    if (err) {
-      return res.json(500, err);
-    }
-
-    res.json(200);
-  });
-};
-
-exports.destroy = function (req, res) {
-  var id = req.params.id;
-
-  async.waterfall([
-    async.apply(findById, id),
-    destroyProblem
-  ], function (err) {
-    if (err) {
-      return res.json(500, err.toString());
-    }
-
-    return res.json({});
-  });
-};
+  };
+}());

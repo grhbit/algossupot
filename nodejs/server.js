@@ -89,7 +89,6 @@ router.route('/submissions')
 
 router.route('/submission/:id')
   .get(api.submission.show)
-  .put(api.submission.update)
   .delete(api.submission.destroy);
 
 router.route('*')

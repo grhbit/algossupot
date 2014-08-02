@@ -1,7 +1,7 @@
-/*jslint node: true, eqeq: true, vars: true */
-/*global winston, async, config, models*/
+/*jslint node: true, eqeq: true */
+/*global _, winston, async, config, models*/
 'use strict';
-var fs = require('fs');
+var fs = require('fs-extra');
 var path = require('path');
 var util = require('util');
 var mkdirp = require('mkdirp');
@@ -9,149 +9,142 @@ var judgeRpcClient = require('../../judge');
 
 var _Submission, ClassMethods = {}, InstanceMethods = {};
 
-ClassMethods.push = function (submissionMember, userId, problemId, callback) {
-  var User = models.User;
-  var Problem = models.Problem;
-  var sequelize = models.sequelize;
-  var findUserById = function (cb) {
-    User.find(userId).
-      success(function (user) {
-        if (user) {
-          return cb(null, user);
-        }
-        cb(new Error('Not found User'));
-      }).
-      error(function (err) {
-        cb(err);
-      });
-  };
-  var findProblemById = function (cb) {
-    Problem.find(problemId).
-      success(function (problem) {
-        if (problem) {
-          return cb(null, problem);
-        }
-        cb(new Error('Not found problem'));
-      }).
-      error(function (err) {
-        cb(err);
-      });
-  };
-  var createSubmission = function (err, results) {
-    sequelize.transaction(function (t) {
-      var submission = _Submission.build({
-        language: submissionMember.language,
-        codeLength: String(submissionMember.sourceCode).length
-      });
+ClassMethods.push = (function () {
 
-      var saveSubmission = function (cb) {
-        submission.save({ transaction: t }).
-          success(function () {
-            cb(null);
-          }).
-          error(function (err) {
-            cb(err);
+  function checkValidation(data, cb) {
+    data = data || {};
+    var user = data.user,
+      problem = data.problem,
+      submissionData = data.submissionData,
+      checkNotNull = function (cb) {
+        function hasKey(items, data, cb) {
+          async.every(items, function (item, cb) {
+            cb(_.has(data, item));
+          }, function (result) {
+            cb(result ? null : new Error('validation failed'));
           });
+        }
+
+        async.waterfall([
+          function (cb) { cb(user ? null : new Error('Not found user')); },
+          function (cb) { cb(problem ? null : new Error('Not found problem')); },
+          async.apply(hasKey, ['language', 'sourceCode'], submissionData)
+        ], cb);
       };
-      var userAddSubmission = function (cb) {
-        results.user.addSubmission(submission, { transaction: t }).
-          success(function () {
-            cb(null);
-          }).
-          error(function (err) {
-            cb(err);
-          });
-      };
-      var problemAddSubmission = function (cb) {
-        results.problem.addSubmission(submission, { transaction: t }).
-          success(function () {
-            cb(null);
-          }).
-          error(function (err) {
-            cb(err);
-          });
-      };
-      var saveSourceCode = function (cb) {
-        var dos2unix = function (cb) {
-          cb(null, submissionMember.sourceCode.replace(/(\0xd)/g, ''));
-        };
-        var makeDirectory = function (cb) {
-          var dirname = path.dirname(submission.getSourceCodePath());
-          fs.stat(dirname, function (err, stats) {
-            if (err) {
-              return mkdirp(dirname, function (err) {
+
+    async.waterfall([
+      checkNotNull
+    ], function (err) {
+      if (err) {
+        return cb(new Error('Submission.push => checkValidation() failed.'));
+      }
+      cb(null);
+    });
+  }
+
+  function transactionProcess(data, cb) {
+    var sequelize = models.sequelize;
+    sequelize.transaction(function (t) {
+      var user = data.user,
+        problem = data.problem,
+        submissionData = data.submissionData,
+        submission = _Submission.build({
+          language: submissionData.language,
+          codeLength: String(submissionData.sourceCode).length
+        }),
+        savingSubmission = function (cb) {
+          submission.save({transaction: t})
+            .success(function () {
+              cb(null);
+            })
+            .error(cb);
+        },
+        setUserAssociate = function (cb) {
+          user.addSubmission(submission, {transaction: t})
+            .success(function () {
+              cb(null);
+            })
+            .error(cb);
+        },
+        setProblemAssociate = function (cb) {
+          problem.addSubmission(submission, {transaction: t})
+            .success(function () {
+              cb(null);
+            })
+            .error(cb);
+        },
+        savingSourceCode = function (cb) {
+          var userSubmissionPath = user.getSubmissionPath(),
+            sourceCodePath = path.join(userSubmissionPath, submission.id.toString()),
+            mkdirpSubmissionDir = function (cb) {
+              fs.mkdirp(userSubmissionPath, function (err) {
                 if (err) {
                   return cb(err);
                 }
                 cb(null);
               });
-            }
-            if (!stats.isDirectory()) {
-              return cb(new Error('makeDirectory failed'));
-            }
+            };
 
-            cb(null);
-          });
+          async.waterfall([
+            mkdirpSubmissionDir,
+            async.apply(fs.writeFile, sourceCodePath, submissionData.sourceCode, {encoding: 'utf8'})
+          ], cb);
+        },
+        transactionCommit = function (cb) {
+          t.commit().success(cb);
+        },
+        transactionRollback = function (cb) {
+          t.rollback().success(cb);
         };
-        async.waterfall([
-          makeDirectory,
-          dos2unix,
-          async.apply(fs.writeFile, submission.getSourceCodePath())
-        ], function (err) {
-          if (err) {
-            return cb(err);
-          }
-          cb(null);
-        });
-      };
-      var transactionCommit = function (cb) {
-        t.commit().success(cb);
-      };
-      var transactionRollback = function (cb) {
-        t.rollback().success(cb);
-      };
-
-      if (err) {
-        return callback(err);
-      }
 
       async.waterfall([
-        saveSubmission,
-        userAddSubmission,
-        problemAddSubmission,
-        saveSourceCode,
+        savingSubmission,
+        setUserAssociate,
+        setProblemAssociate,
+        savingSourceCode,
         transactionCommit
       ], function (err) {
         if (err) {
-          transactionRollback(function () {
-            return callback(err);
+          return transactionRollback(function () {
+            cb(err);
           });
         }
-        submission.judge();
-        callback(null);
+        cb(null, submission);
+      });
+    });
+  }
+
+  return function (data, cb) {
+    async.waterfall([
+      async.apply(checkValidation, data),
+      async.apply(transactionProcess, data)
+    ], function (err, submission) {
+      if (err) {
+        console.log(require('util').inspect(err));
+        return cb(err);
+      }
+
+      console.log('Submission.push => cb');
+      submission.judge(function (err, result) {
+        console.log(err);
+        cb(err, submission);
       });
     });
   };
-
-  async.series({
-    user: findUserById,
-    problem: findProblemById
-  }, createSubmission);
-};
+}());
 
 InstanceMethods.getSourceCodePath = function () {
-  var self = this;
-  var userSubmissionFolder = path.join(config.dir.submission, self.UserId.toString());
-  var sourceCodeExt = config.lang.ext[self.language];
+  var self = this,
+    userSubmissionPath = path.join(config.dir.submission, self.UserId.toString());
 
-  return path.join(userSubmissionFolder, self.id.toString() + '.' + sourceCodeExt);
+  return path.join(userSubmissionPath, self.id.toString());
 };
 
 InstanceMethods.getErrorPath = function () {
-  var self = this;
-  var userSubmissionFolder = path.join(config.dir.submission, self.UserId.toString());
+  var self = this,
+    sourceCodePath = self.getSourceCodePath();
 
-  return path.join(userSubmissionFolder, self.id.toString() + '.err');
+  return sourceCodePath + '.err';
 };
 
 InstanceMethods.loadSourceCode = function (callback) {
@@ -176,57 +169,37 @@ InstanceMethods.loadErrorMessage = function (callback) {
   });
 };
 
-InstanceMethods.updateState = function (state, callback) {
-  var self = this;
-  self.updateAttributes({
-    state: state
-  }).
-    success(callback).
-    error(callback);
-};
-
-InstanceMethods.judge = function () {
+InstanceMethods.judge = function (cb) {
   var self = this,
-    source = {
-      path: self.getSourceCodePath(),
-      language: self.language
-    },
     getProblem = function (cb) {
-      models.Problem.find(self.ProblemId).
-        success(function (problem) {
-          cb(null, problem);
-        }).
-        error(function (err) {
-          cb(err);
-        });
+      var Problem = models.Problem;
+      Problem.find(self.ProblemId)
+        .success(function (problem) {
+          if (problem) {
+            return cb(null, problem);
+          }
+          cb(new Error('Not found problem:' + self.ProblemId));
+        })
+        .error(cb);
     },
-    readContents = function (problem, cb) {
-      problem.loadContents(function (err, contents) {
-        if (err) {
-          return cb(err);
-        }
-
-        cb(null, contents.index);
-      });
-    },
-    sendToJudgeMsg = function (problem, cb) {
+    rpcCall = function (data, cb) {
       judgeRpcClient({
-        source: source,
-        problem: problem
+        problem: data.problem.values,
+        submission: data.submission.values
       }, cb);
     };
 
   async.waterfall([
-    getProblem,
-    readContents,
-    sendToJudgeMsg
-  ], function (err, reply) {
+    async.apply(async.series, {
+      submission: function (cb) { cb(null, self); },
+      problem: getProblem
+    }),
+    rpcCall
+  ], function (err, result) {
     if (err) {
-      console.error(err);
-      return err;
+      return cb(err);
     }
-
-    console.log(reply);
+    cb(null, result);
   });
 };
 

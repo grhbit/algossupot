@@ -2,7 +2,13 @@
 /*global winston, async, config, db*/
 'use strict';
 
-var _User, ClassMethods = {};
+var join = require('path').join;
+var _User, ClassMethods = {}, InstanceMethods = {};
+
+InstanceMethods.getSubmissionPath = function () {
+  var self = this;
+  return join(config.dir.submission, self.id.toString());
+};
 
 module.exports = function (sequelize, DataTypes) {
   var User = sequelize.define('User', {
@@ -17,7 +23,9 @@ module.exports = function (sequelize, DataTypes) {
         .hasOne(models.Auth)
         .hasMany(models.Submission)
         .hasMany(models.Problem);
-    }
+    },
+    classMethods: ClassMethods,
+    instanceMethods: InstanceMethods
   });
 
   _User = User;

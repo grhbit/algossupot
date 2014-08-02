@@ -2,24 +2,9 @@
 /*global _, async, config, models*/
 'use strict';
 
-var open = require('amqplib').connect('amqp://localhost'),
+var open = require('amqplib').connect('amqp://172.17.42.1'),
   fs = require('fs'),
-  uuid = require('uuid'),
-  optionsValidate = function (options) {
-    options = options || {};
-    var source = options.source || {},
-      problem = options.problem || {},
-      metadata = problem.metadata,
-      limit = problem.limit,
-      mark = problem.mark,
-      bSource = source && source.path && source.language,
-      bMetadata = metadata && metadata.slug && metadata.name,
-      bLimit = limit && limit.time && limit.memory && limit.disk,
-      bMarkIn = mark && mark.in && mark.in.method && mark.in.path,
-      bMarkOut = mark && mark.out && mark.out.method && mark.out.path;
-
-    return !(bSource && bMetadata && bLimit && bMarkIn && bMarkOut);
-  };
+  uuid = require('uuid');
 
 module.exports = (function () {
   var defaults = {
@@ -29,30 +14,30 @@ module.exports = (function () {
   return function (options, callback) {
     options = options || {};
 
-    if (optionsValidate(options)) {
-      return callback(new Error('Invalid source or problem'));
-    }
-
-    var source = options.source,
+    var submission = options.submission,
       problem = options.problem,
       queueName = options.queueName || defaults.queueName;
 
     open.then(function (conn) {
       var ok = conn.createChannel();
+      console.log('open - ok!');
 
       ok.then(function (ch) {
+        console.log('createChannel - ok!');
         var replyTo = uuid.v4(),
           correlationId = uuid.v4();
 
         ch.assertQueue(replyTo, { exclusive: true });
 
         ch.publish('', queueName, new Buffer(JSON.stringify({
-          source: source,
+          submission: submission,
           problem: problem
         })), {
           correlationId: correlationId,
           replyTo: replyTo
         });
+
+        console.log('publish - ok!');
 
         ch.consume(replyTo, function (msg) {
           if (msg.properties.correlationId === correlationId) {
@@ -64,4 +49,4 @@ module.exports = (function () {
     });
   };
 
-}());
+}())();
