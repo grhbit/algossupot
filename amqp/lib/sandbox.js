@@ -23,7 +23,7 @@ var command = [
 module.exports = (function (config) {
   config = config || {
     "queueName": "rpc_queue",
-    "sandboxDataDir": "./data",
+    "sandboxDataDir": "../sandbox/data",
     "storageDir": "../nodejs/storage"
   };
 
