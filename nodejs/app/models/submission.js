@@ -1,4 +1,4 @@
-/*jslint node: true, eqeq: true */
+/*jslint node: true, eqeq: true, vars: true */
 /*global _, winston, async, config, models*/
 'use strict';
 var fs = require('fs-extra');
@@ -127,7 +127,12 @@ ClassMethods.push = (function () {
       console.log('Submission.push => cb');
       submission.judge(function (err, result) {
         console.log(err);
-        cb(err, submission);
+
+        submission.state = result.state;
+        submission.save().success(function () {
+          cb(null);
+        }).error(cb);
+        // cb(err, submission);
       });
     });
   };

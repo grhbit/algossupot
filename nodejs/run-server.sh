@@ -6,4 +6,5 @@ docker run --name=webapp -d \
        -v $(pwd)/storage:/data/storage \
        --link=redis:session \
        --link=mariadb:db \
+       --link=amqp:amqp \
        -p 3000:3000 webapp

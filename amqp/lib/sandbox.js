@@ -21,11 +21,7 @@ var command = [
 ].join(' ');
 
 module.exports = (function (config) {
-  config = config || {
-    "queueName": "rpc_queue",
-    "sandboxDataDir": "../sandbox/data",
-    "storageDir": "../nodejs/storage"
-  };
+  config = config || {};
 
   return function (submission, problem, callback) {
     var mkstemps = function (cb) {
@@ -45,8 +41,6 @@ module.exports = (function (config) {
           '--output=%(output)s'
         ].join(' '), options)
       }), child;
-
-      // console.log(cmd);
 
       child = exec(cmd, function (error, stdout, stderr) {
         if (error !== null) {
@@ -87,9 +81,9 @@ module.exports = (function (config) {
           '%(entrypoint)s',
           '%(argument)s'
         ].join(' '), {
-          timeLimit: options.timeLimit || 1024 * 10,
-          memoryLimit: options.memoryLimit || 1024 * 1024 * 10,
-          diskLimit: options.diskLimit || 1024 * 1024 * 10,
+          timeLimit: parseInt(options.timeLimit, 10) || 1024 * 10,
+          memoryLimit: parseInt(options.memoryLimit, 10) || 1024 * 1024 * 10,
+          diskLimit: parseInt(options.diskLimit, 10) || 1024 * 1024 * 10,
           inputPath: options.inputPath || '/data/in.txt',
           outputPath: options.outputPath || '/data/out.txt',
           errorPath: options.errorPath || '/data/err.txt',
@@ -113,9 +107,18 @@ module.exports = (function (config) {
         var result = JSON.parse(stdout);
         cb(result.state !== 'Passed' ? new Error(result.state) : null, result);
       });
+    }, source = {
+      path: join(config.storageDir, 'submission', submission.UserId.toString(), submission.id.toString()),
+      language: submission.language
     };
 
+    problem.path = join(config.storageDir, 'problem', submission.ProblemId.toString());
+
     mkstemps(function (err, datadir) {
+      if (err) {
+        return callback(err);
+      }
+
       datadir = join(__dirname, datadir);
 
       var inputGenerate = function (cb) {
@@ -134,7 +137,7 @@ module.exports = (function (config) {
 
                 var genScriptSrcPath = join(problem.path, input.path),
                   genScriptDstPath = join(workdir, basename(input.path)),
-                  sourcePath = join('/data/', basename(input.path)),
+                  sourcePath = join('/data/', basename(input.path) + '.' + config.languageExt[input.language]),
                   outputPath = '/data/generate.o';
 
                 async.waterfall([
@@ -166,10 +169,10 @@ module.exports = (function (config) {
         var limit = problem.limit;
 
         async.waterfall([
-          async.apply(fs.copy, source.path, join(datadir, basename(source.path))),
+          async.apply(fs.copy, source.path, join(datadir, basename(source.path) + '.' + config.languageExt[source.language])),
           async.apply(compile, datadir, {
-            language: submission.language,
-            source: join('/data', basename(source.path)),
+            language: source.language,
+            source: join('/data', basename(source.path) + '.' + config.languageExt[source.language]),
             output: '/data/O.o'
           }),
           async.apply(monitor, datadir, {
@@ -178,6 +181,9 @@ module.exports = (function (config) {
             diskLimit: limit.disk
           })
         ], function (err, result) {
+          if (err && err.message === 'CompileError') {
+            return cb(err, {state: 'CompileError'});
+          }
           cb(err, result);
         });
       }, marking = function (runningResult, cb) {
@@ -207,7 +213,7 @@ module.exports = (function (config) {
 
                 var limit = problem.limit,
                   outputPath = join(datadir, 'out.txt'),
-                  answerPath = join(answerScriptWorkDir, basename(output.path)),
+                  answerPath = join(answerScriptWorkDir, basename(output.path) + '.' + config.languageExt[output.language]),
                   diffOption = output.diffOption;
 
                 async.waterfall([
@@ -240,7 +246,7 @@ module.exports = (function (config) {
                 var limit = problem.limit,
                   inputPath = join(datadir, 'in.txt'),
                   outputPath = join(datadir, 'out.txt'),
-                  markingScriptPath = join(markingScriptWorkDir, basename(output.path));
+                  markingScriptPath = join(markingScriptWorkDir, basename(output.path) + '.' + config.languageExt[output.language]);
 
                 async.waterfall([
                   async.apply(fs.move, inputPath, join(markingScriptWorkDir, 'in.txt')),
@@ -315,4 +321,4 @@ module.exports = (function (config) {
     });
 
   };
-}());
+});

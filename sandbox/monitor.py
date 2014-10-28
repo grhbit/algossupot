@@ -175,4 +175,4 @@ if __name__ == "__main__":
         print inst.__str__()
     except Exception as inst:
         print >> sys.stderr, inst
-        print "InternalError"
+        print json.dumps(dict(state="InternalError"))

@@ -2,7 +2,7 @@
 /*global _, async, config, models*/
 'use strict';
 
-var open = require('amqplib').connect('amqp://172.17.42.1'),
+var open = require('amqplib').connect('amqp://' + process.env.AMQP_PORT_5672_TCP_ADDR + ':' + process.env.AMQP_PORT_5672_TCP_PORT),
   fs = require('fs'),
   uuid = require('uuid');
 
@@ -49,4 +49,4 @@ module.exports = (function () {
     });
   };
 
-}())();
+}());

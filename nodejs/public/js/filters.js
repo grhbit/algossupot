@@ -46,10 +46,7 @@ angular.module('myApp.filters', []).
       'Internal Error'
     ];
 
-    return function (iState) {
-      if (sState.length <= iState) {
-        return '';
-      }
-      return sState[iState];
+    return function (state) {
+      return state;
     };
   });
